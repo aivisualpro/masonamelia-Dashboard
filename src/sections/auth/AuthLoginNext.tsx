@@ -153,7 +153,7 @@ export default function AuthLoginNext() {
 
               <Grid size={12}>
                 <Stack direction="row" spacing={1} justifyContent="center">
-                  <Typography variant="body2">Don't have an account?</Typography>
+                  <Typography variant="body2">Don&apos;t have an account?</Typography>
                   <Link href="/register" variant="body2" sx={{ textDecoration: 'none', cursor: 'pointer' }}>
                     Register here
                   </Link>

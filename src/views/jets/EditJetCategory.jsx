@@ -31,7 +31,7 @@ export default function EditJetCategory() {
             setValue('name', response.data.name);
         }
     })()
-  }, [])
+  }, [id, setValue])
 
   const navigate = useNavigate();
 

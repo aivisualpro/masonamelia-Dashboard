@@ -251,7 +251,7 @@ export default function TestimonialsPage() {
       <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}>
         <DialogTitle>Delete Testimonial</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete the testimonial from "{deleteConfirm?.name}"? This action cannot be undone.
+          Are you sure you want to delete the testimonial from &quot;{deleteConfirm?.name}&quot;? This action cannot be undone.
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirm(null)}>Cancel</Button>

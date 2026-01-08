@@ -54,7 +54,7 @@ export default function EditReview() {
       }
     };
     fetchReview();
-  }, [id]);
+  }, [id, reset]);
 
   const onSubmit = async (values) => {
     setUploading(true);

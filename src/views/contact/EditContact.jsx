@@ -62,7 +62,7 @@ export default function EditContact() {
       }
     };
     fetchContactInfo();
-  }, [])
+  }, [id, reset])
 
   const onSubmit = async (values) => {
     setUploading(true);

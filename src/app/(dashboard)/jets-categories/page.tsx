@@ -223,7 +223,7 @@ export default function JetsCategoriesPage() {
       <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}>
         <DialogTitle>Delete Category</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete "{deleteConfirm?.name}"? This action cannot be undone.
+          Are you sure you want to delete &quot;{deleteConfirm?.name}&quot;? This action cannot be undone.
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirm(null)}>Cancel</Button>
