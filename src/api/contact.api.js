@@ -3,7 +3,7 @@ import axios from "axios";
 /* ------------------- GET ---------------------- */
 export const getContactsLists = async () => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/lists`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/contacts/lists`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -12,7 +12,7 @@ export const getContactsLists = async () => {
 
 export const getContactById = async (id) => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/lists/${id}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/contacts/lists/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -22,7 +22,7 @@ export const getContactById = async (id) => {
 /* ------------------- POST ---------------------- */
 export const createContact = async (data) => {
     try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts`, data);
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/contacts`, data);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -32,7 +32,7 @@ export const createContact = async (data) => {
 /* ------------------- PUT ---------------------- */
 export const updateContact = async (id, data) => {
     try {
-        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/update/${id}`, data);
+        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/contacts/update/${id}`, data);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -42,7 +42,7 @@ export const updateContact = async (id, data) => {
 /* ------------------- DELETE ---------------------- */
 export const deleteContact = async (id) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/delete/${id}`);
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/contacts/delete/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -51,7 +51,7 @@ export const deleteContact = async (id) => {
 
 export const bulkDeleteContact = async (ids) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/contacts/bulkDelete`, { ids });
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/contacts/bulkDelete`, { ids });
         return response.data;
     } catch (error) {
         console.log(error);

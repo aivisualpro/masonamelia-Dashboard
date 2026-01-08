@@ -3,7 +3,7 @@ import axios from 'axios';
 /* ------------------- GET ---------------------- */
 export const getAuthorsLists = async () => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/authors/lists`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/authors/lists`);
         console.log('authors= ==== ', response?.data);
         return response.data;
     } catch (error) {
@@ -13,7 +13,7 @@ export const getAuthorsLists = async () => {
 
 export const getAuthorById = async (id) => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/authors/lists/${id}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/authors/lists/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -23,7 +23,7 @@ export const getAuthorById = async (id) => {
 /* ------------------- POST ---------------------- */
 export const createAuthor = async (data) => {
     try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/authors`, data);
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/authors`, data);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -33,7 +33,7 @@ export const createAuthor = async (data) => {
 /* ------------------- PUT ---------------------- */
 export const updateAuthor = async (id, data) => {
     try {
-        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/authors/update/${id}`, data);
+        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/authors/update/${id}`, data);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -43,7 +43,7 @@ export const updateAuthor = async (id, data) => {
 /* ------------------- DELETE ---------------------- */
 export const deleteAuthor = async (id) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/authors/delete/${id}`);
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/authors/delete/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -52,7 +52,7 @@ export const deleteAuthor = async (id) => {
 
 export const deleteAuthorsByBulk = async (ids) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/authors/bulkDelete`, { ids });
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/authors/bulkDelete`, { ids });
         return response.data;
     } catch (error) {
         console.log(error);

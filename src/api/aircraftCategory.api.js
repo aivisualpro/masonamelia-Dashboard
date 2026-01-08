@@ -2,7 +2,7 @@ import axios from "axios";
 
 export const getAircraftCategories = async () => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/aircraftCategories/lists`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/aircraftCategories/lists`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -11,7 +11,7 @@ export const getAircraftCategories = async () => {
 
 export const getAircraftCategoryById = async (id) => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/aircraftCategories/lists/${id}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/aircraftCategories/lists/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -20,7 +20,7 @@ export const getAircraftCategoryById = async (id) => {
 
 export const createAircraftCategory = async (data) => {
     try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/aircraftCategories`, data);
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/aircraftCategories`, data);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -29,7 +29,7 @@ export const createAircraftCategory = async (data) => {
 
 export const updateAircraftCategory = async (id, data) => {
     try {
-        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/aircraftCategories/update/${id}`, data);
+        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/aircraftCategories/update/${id}`, data);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -38,7 +38,7 @@ export const updateAircraftCategory = async (id, data) => {
 
 export const deleteAircraftCategory = async (id) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/aircraftCategories/delete/${id}`);
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/aircraftCategories/delete/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -47,7 +47,7 @@ export const deleteAircraftCategory = async (id) => {
 
 export const deleteAircraftCategoriesByBulk = async (ids) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/aircraftCategories/bulk-delete`, { ids });
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/aircraftCategories/bulk-delete`, { ids });
         return response.data;
     } catch (error) {
         console.log(error);

@@ -3,7 +3,7 @@ import axios from "axios";
 /* ------------------- GET ---------------------- */
 export const getVideos = async () => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/lists`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/videos/lists`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -12,7 +12,7 @@ export const getVideos = async () => {
 
 export const getVideoById = async (id) => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/lists/${id}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/videos/lists/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -23,7 +23,7 @@ export const getVideoById = async (id) => {
 export const createVideo = async (formData) => {
     // Let Axios set the boundary. You can omit headers entirely.
     const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/videos`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/videos`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } } // optional; Axios will add this automatically
     );
@@ -34,7 +34,7 @@ export const createVideo = async (formData) => {
 export const updateVideo = async (id, formData) => {
     try {
         const response = await axios.put(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/videos/update/${id}`,
+            `${process.env.NEXT_PUBLIC_API_URL || ""}/api/videos/update/${id}`,
             formData,
             { headers: { "Content-Type": "multipart/form-data" } }
         );
@@ -47,7 +47,7 @@ export const updateVideo = async (id, formData) => {
 /* ------------------- DELETE ---------------------- */
 export const deleteVideo = async (id) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/delete/${id}`);
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/videos/delete/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -56,7 +56,7 @@ export const deleteVideo = async (id) => {
 
 export const deleteVideosByBulk = async (ids) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/videos/bulkDelete`, { ids });
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/videos/bulkDelete`, { ids });
         return response.data;
     } catch (error) {
         console.log(error);

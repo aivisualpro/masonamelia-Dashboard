@@ -23,7 +23,7 @@ export default function DashboardDefault() {
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/analysis/lists`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/analysis/lists`);
         if (response?.data?.success) {
           setAnalysis(response.data);
         }

@@ -3,7 +3,7 @@ import axios from "axios";
 /* ------------------- GET ---------------------- */
 export const getTeamLists = async () => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/teams/lists`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/teams/lists`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -12,7 +12,7 @@ export const getTeamLists = async () => {
 
 export const getTeamById = async (id) => {
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/teams/lists/${id}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/teams/lists/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -23,7 +23,7 @@ export const getTeamById = async (id) => {
 export const createTeam = async (formData) => {
     try {
         const response = await axios.post(`
-        ${process.env.NEXT_PUBLIC_API_URL}/api/teams`,
+        ${process.env.NEXT_PUBLIC_API_URL || ""}/api/teams`,
             formData,
             { headers: { "Content-type": "multipart/formdata" } }
         );
@@ -37,7 +37,7 @@ export const createTeam = async (formData) => {
 export const updateTeam = async (id, formData) => {
     try {
         const response = await axios.put(`
-        ${process.env.NEXT_PUBLIC_API_URL}/api/teams/update/${id}`,
+        ${process.env.NEXT_PUBLIC_API_URL || ""}/api/teams/update/${id}`,
             formData,
             { headers: { "Content-type": "multipart/formdata" } }
         );
@@ -50,7 +50,7 @@ export const updateTeam = async (id, formData) => {
 /* ------------------- DELETE ---------------------- */
 export const deleteTeam = async (id) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/teams/delete/${id}`);
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/teams/delete/${id}`);
         return response.data;
     } catch (error) {
         console.log(error);
@@ -59,7 +59,7 @@ export const deleteTeam = async (id) => {
 
 export const deleteTeamsByBulk = async (ids) => {
     try {
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/teams/bulkDelete`, { ids });
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/teams/bulkDelete`, { ids });
         return response.data;
     } catch (error) {
         console.log(error);
