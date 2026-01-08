@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import User from '@/lib/models/User.model';
 import jwt from 'jsonwebtoken';
 
 const JWT_KEY = process.env.JWT_KEY || 'masonAmelia';
@@ -21,11 +22,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Import the User model dynamically
-    const UserModel = (await import('@/lib/models/User.model')).default || require('@/lib/models/User.model');
-
     // Find user by email
-    const user = await UserModel.findOne({ email });
+    const user = await User.findOne({ email });
     console.log("DEBUG: User lookup complete:", user ? "Found" : "Not Found");
 
     if (!user) {

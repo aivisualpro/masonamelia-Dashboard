@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 
+import User from '@/lib/models/User.model';
+
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
@@ -15,11 +17,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Import the User model dynamically
-    const UserModel = (await import('@/lib/models/User.model')).default || require('@/lib/models/User.model');
-
     // Check if user already exists
-    const existingUser = await UserModel.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
 
     if (existingUser) {
       return NextResponse.json(
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new user (Note: In production, you should hash the password using bcrypt)
-    const newUser = new UserModel({
+    const newUser = new User({
       name,
       email,
       username,
