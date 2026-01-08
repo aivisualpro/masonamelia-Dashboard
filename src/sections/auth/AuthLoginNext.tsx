@@ -63,6 +63,10 @@ export default function AuthLoginNext() {
               setSnack({ open: true, severity: 'success', msg: 'Login Successfully' });
               localStorage.setItem("user", JSON.stringify(response.user));
               localStorage.setItem("token", response.token);
+              
+              // Set cookie for middleware access
+              document.cookie = `token=${response.token}; path=/; max-age=604800; SameSite=Lax`;
+              
               setLoading(false);
               setTimeout(() => {
                 router.push("/");
