@@ -245,7 +245,7 @@ export default function AircraftTable() {
   const fetchRows = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/lists/admin?page=1&pageSize=100`);
+      const res = await fetch(`${API_BASE}/lists/admin?page=1&pageSize=1000`);
       const json = await res.json();
       setAircrafts(json.data || []);
     } catch (e) {
@@ -329,7 +329,7 @@ export default function AircraftTable() {
   const columns: GridColDef<AircraftRow>[] = React.useMemo(
     () => [
       { field: 'index', headerName: 'Index', width: 90, type: 'number' },
-      { field: 'image', headerName: 'Image', width: 120, renderCell: (params) => <img src={params?.value} alt="" /> },
+      { field: 'image', headerName: 'Image', width: 120, renderCell: (params) => <div className="w-full h-full p-1"><img src={params?.value} alt="" className="w-full h-full object-cover rounded-md" loading="lazy" /></div> },
       { field: 'title', headerName: 'Title', flex: 1, minWidth: 220 },
       { field: 'year', headerName: 'Year', width: 90, type: 'number' },
       { field: 'price', headerName: 'Price', width: 120, type: 'number' },
@@ -425,9 +425,9 @@ export default function AircraftTable() {
             onRowSelectionModelChange={(m) => setSelection(m as unknown as GridRowId[])}
             slots={{ toolbar: GridToolbar }}
             slotProps={{ toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 300 } } }}
-            sx={{ minHeight: '75vh', backgroundColor: '#f4f4f4' }}
-            initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-            pageSizeOptions={[10]}
+            sx={{ minHeight: '75vh', border: 0 }}
+            initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
+            pageSizeOptions={[10, 25, 50, 100]}
           />
         </div>
       </Paper>

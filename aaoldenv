@@ -1,0 +1,6 @@
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+MONGO_URL=mongodb+srv://sagheer:nP0LPJVyAzTJd8gz@mason-amelia-cluster.l2yvyfn.mongodb.net/
+CLOUDINARY_CLOUD_NAME=d2o7jjdc
+CLOUDINARY_CLOUD_API_KEY=82558497259895
+CLOUDINARY_CLOUD_API_SECRET=XQaL770kG_RNRCaKOrjYa9-qVe4
+JWT_KEY=masonAmelia
