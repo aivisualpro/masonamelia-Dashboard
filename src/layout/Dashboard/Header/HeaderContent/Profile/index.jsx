@@ -115,7 +115,11 @@ export default function Profile() {
             <Paper sx={(theme) => ({ boxShadow: theme.customShadows.z1, width: 290, minWidth: 240, maxWidth: { xs: 250, md: 290 } })}>
               <ClickAwayListener onClickAway={handleClose}>
                 <MainCard elevation={0} border={false} content={false}>
-                  <CardContent sx={{ px: 1, pt: 3 }} className='hover:bg-blue-50 cursor-pointer' onClick={() => { localStorage.clear(); router.push("/login") }}>
+                  <CardContent sx={{ px: 1, pt: 3 }} className='hover:bg-blue-50 cursor-pointer' onClick={() => { 
+                    localStorage.clear(); 
+                    document.cookie = "token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                    router.push("/login"); // Force reload to ensure state clean? using router.push("/login") is fine if middleware catches it.
+                  }}>
                     <Grid container justifyContent="space-between" alignItems="center">
                       <Grid container sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                         <LogoutOutlined className='text-xl mx-2' />
