@@ -5,10 +5,14 @@ import jwt from 'jsonwebtoken';
 const JWT_KEY = process.env.JWT_KEY || 'masonAmelia';
 
 export async function POST(request: NextRequest) {
+  console.log("DEBUG: Login API hit"); // Log entry
   try {
+    console.log("DEBUG: Connecting to DB...");
     await dbConnect();
+    console.log("DEBUG: DB Connected");
     
     const { email, password } = await request.json();
+    console.log(`DEBUG: Processing login for email: ${email}`);
 
     if (!email || !password) {
       return NextResponse.json(
@@ -22,6 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Find user by email
     const user = await UserModel.findOne({ email });
+    console.log("DEBUG: User lookup complete:", user ? "Found" : "Not Found");
 
     if (!user) {
       console.log(`Login failed for ${email}: User not found`);
