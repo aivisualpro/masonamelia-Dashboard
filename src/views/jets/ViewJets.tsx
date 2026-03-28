@@ -37,7 +37,7 @@ type StatusOption = typeof STATUS_OPTIONS[number];
 
 const numberFmt = new Intl.NumberFormat('en-US');
 
-const SECTION_KEYS = ['airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'] as const;
+const SECTION_KEYS = ['general', 'airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'] as const;
 
 interface DescriptionSection {
   html?: string;

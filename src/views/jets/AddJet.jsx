@@ -33,9 +33,10 @@ const STATUS = [
   { name: 'Acquired', slug: 'acquired' }
 ];
 
-const SECTION_KEYS = ['airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'];
+const SECTION_KEYS = ['general', 'airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'];
 
 const SECTION_LABELS = {
+  general: 'General',
   airframe: 'Airframe',
   engine: 'Engine',
   propeller: 'Propeller',
@@ -47,7 +48,7 @@ const SECTION_LABELS = {
 };
 
 export default function AddJet() {
-  const [activeTab, setActiveTab] = useState('airframe');
+  const [activeTab, setActiveTab] = useState('general');
   const [images, setImages] = useState([]); // File[]
   const [featuredImage, setFeaturedImage] = useState(null); // File | null
   const featuredInputRef = useRef(null);
