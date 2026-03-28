@@ -30,10 +30,11 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 const STATUS = ['for-sale', 'sold', 'wanted', 'coming-soon', 'sale-pending', 'off-market', 'acquired'];
-const SECTION_KEYS = ['airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'] as const;
+const SECTION_KEYS = ['general', 'airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'] as const;
 type SectionKey = typeof SECTION_KEYS[number];
 
 const SECTION_LABELS: Record<SectionKey, string> = {
+  general: 'General',
   airframe: 'Airframe',
   engine: 'Engine',
   propeller: 'Propeller',
@@ -154,7 +155,7 @@ interface EditJetProps {
 }
 
 export default function EditJet({ id }: EditJetProps) {
-  const [activeTab, setActiveTab] = useState<SectionKey>('airframe');
+  const [activeTab, setActiveTab] = useState<SectionKey>('general');
 
   // gallery images
   const [imagesLocal, setImagesLocal] = useState<File[]>([]);
