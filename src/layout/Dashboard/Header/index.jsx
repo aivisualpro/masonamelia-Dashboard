@@ -1,77 +1,97 @@
+'use client';
+
 import { useMemo } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 
 // material-ui
 import useMediaQuery from '@mui/material/useMediaQuery';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import { useTheme } from '@mui/material/styles';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // project imports
-import AppBarStyled from './AppBarStyled';
 import HeaderContent from './HeaderContent';
-import IconButton from 'components/@extended/IconButton';
-
-import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
-import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from 'config';
-
-// assets
-import MenuFoldOutlined from '@ant-design/icons/MenuFoldOutlined';
-import MenuUnfoldOutlined from '@ant-design/icons/MenuUnfoldOutlined';
 
 // ==============================|| MAIN LAYOUT - HEADER ||============================== //
 
 export default function Header() {
   const downLG = useMediaQuery((theme) => theme.breakpoints.down('lg'));
+  const pathname = usePathname();
+  const router = useRouter();
+  const theme = useTheme();
 
-  const { menuMaster } = useGetMenuMaster();
-  const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  // Show back button on detail/edit pages
+  const showBack = pathname.startsWith('/jets/edit') || pathname.startsWith('/jets/add');
 
   // header content
   const headerContent = useMemo(() => <HeaderContent />, []);
 
-  // common header
+  const navLinks = [
+    { title: 'Jets', path: '/jets' },
+    { title: 'Categories', path: '/jets-categories' },
+    { title: 'Brands', path: '/brands' },
+    { title: 'Teams', path: '/teams' },
+    { title: 'Testimonials', path: '/testimonials' },
+    { title: 'Contacts', path: '/contact' }
+  ];
+
   const mainHeader = (
-    <Toolbar>
-      <IconButton
-        aria-label="open drawer"
-        onClick={() => handlerDrawerOpen(!drawerOpen)}
-        edge="start"
-        color="secondary"
-        variant="light"
-        sx={(theme) => ({
-          color: 'text.primary',
-          bgcolor: drawerOpen ? 'transparent' : 'grey.100',
-          ...theme.applyStyles('dark', { bgcolor: drawerOpen ? 'transparent' : 'background.default' }),
-          ml: { xs: 0, lg: -2 }
-        })}
-      >
-        {!drawerOpen ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-      </IconButton>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, px: 2 }}>
+      {/* Left: Logo + Nav */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, md: 4 } }}>
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/logo.png" alt="Mason Amelia" style={{ height: 36, width: 'auto' }} />
+        </Link>
+        
+        {!downLG && (
+          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+            {navLinks.map((link) => (
+              <Link key={link.title} href={link.path} style={{ textDecoration: 'none' }}>
+                <Typography 
+                  variant="body2" 
+                  color="text.primary" 
+                  sx={{ 
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    transition: 'color 0.15s ease',
+                    '&:hover': { 
+                      color: 'primary.main',
+                    },
+                  }}
+                >
+                  {link.title}
+                </Typography>
+              </Link>
+            ))}
+          </Box>
+        )}
+      </Box>
+      
+      {/* Right: Add Aircraft + Theme + Logout */}
       {headerContent}
-    </Toolbar>
+    </Box>
   );
 
-  // app-bar params
-  const appBar = {
-    position: 'fixed',
-    color: 'inherit',
-    elevation: 0,
-    sx: {
-      borderBottom: '1px solid',
-      borderBottomColor: 'divider',
-      zIndex: 1200,
-      width: { xs: '100%', lg: drawerOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : `calc(100% - ${MINI_DRAWER_WIDTH}px)` }
-    }
-  };
-
   return (
-    <>
-      {!downLG ? (
-        <AppBarStyled open={drawerOpen} {...appBar}>
-          {mainHeader}
-        </AppBarStyled>
-      ) : (
-        <AppBar {...appBar}>{mainHeader}</AppBar>
-      )}
-    </>
+    <AppBar 
+      position="static"
+      color="inherit"
+      elevation={0}
+      sx={{
+        borderBottom: '1px solid',
+        borderBottomColor: 'divider',
+        backgroundColor: 'background.paper',
+        borderRadius: 2,
+        flexShrink: 0,
+        mb: 2,
+      }}
+    >
+      {mainHeader}
+    </AppBar>
   );
 }

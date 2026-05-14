@@ -1,38 +1,122 @@
+'use client';
+
 // material-ui
-import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 
-// ==============================|| AUTH BLUR BACK SVG ||============================== //
+// ==============================|| AUTH - PREMIUM MESH BACKGROUND ||============================== //
 
 export default function AuthBackground() {
-  const theme = useTheme();
-
   return (
     <Box
       sx={{
-        position: 'absolute',
-        filter: 'blur(18px)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
         zIndex: -1,
-        bottom: 0,
-        transform: 'inherit'
+        overflow: 'hidden',
+        backgroundColor: '#050505', // Deep premium black
       }}
     >
-      <svg width="100%" height="calc(100vh - 175px)" viewBox="0 0 405 809" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M-358.39 358.707L-293.914 294.23L-293.846 294.163H-172.545L-220.81 342.428L-233.272 354.889L-282.697 404.314L-276.575 410.453L0.316589 687.328L283.33 404.314L233.888 354.889L230.407 351.391L173.178 294.163H294.48L294.547 294.23L345.082 344.765L404.631 404.314L0.316589 808.629L-403.998 404.314L-358.39 358.707ZM0.316589 0L233.938 233.622H112.637L0.316589 121.301L-112.004 233.622H-233.305L0.316589 0Z"
-          fill={theme.palette.primary.light}
-        />
-        <path
-          d="M-516.39 358.707L-451.914 294.23L-451.846 294.163H-330.545L-378.81 342.428L-391.272 354.889L-440.697 404.314L-434.575 410.453L-157.683 687.328L125.33 404.314L75.8879 354.889L72.4068 351.391L15.1785 294.163H136.48L136.547 294.23L187.082 344.765L246.631 404.314L-157.683 808.629L-561.998 404.314L-516.39 358.707ZM-157.683 0L75.9383 233.622H-45.3627L-157.683 121.301L-270.004 233.622H-391.305L-157.683 0Z"
-          fill={theme.palette.success.light}
-          opacity="0.6"
-        />
-        <path
-          d="M-647.386 358.707L-582.91 294.23L-582.842 294.163H-461.541L-509.806 342.428L-522.268 354.889L-571.693 404.314L-565.571 410.453L-288.68 687.328L-5.66624 404.314L-55.1082 354.889L-58.5893 351.391L-115.818 294.163H5.48342L5.5507 294.23L56.0858 344.765L115.635 404.314L-288.68 808.629L-692.994 404.314L-647.386 358.707ZM-288.68 0L-55.0578 233.622H-176.359L-288.68 121.301L-401 233.622H-522.301L-288.68 0Z"
-          fill={theme.palette.error.lighter}
-          opacity="1"
-        />
-      </svg>
+      <Box
+        component="style"
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes float1 {
+              0% { transform: translate(0, 0) scale(1); }
+              33% { transform: translate(5%, 10%) scale(1.1); }
+              66% { transform: translate(-5%, 5%) scale(0.9); }
+              100% { transform: translate(0, 0) scale(1); }
+            }
+            @keyframes float2 {
+              0% { transform: translate(0, 0) scale(1); }
+              33% { transform: translate(-10%, -5%) scale(1.05); }
+              66% { transform: translate(5%, -10%) scale(1.15); }
+              100% { transform: translate(0, 0) scale(1); }
+            }
+            @keyframes float3 {
+              0% { transform: translate(0, 0) scale(1); }
+              50% { transform: translate(10%, -10%) scale(1.2); }
+              100% { transform: translate(0, 0) scale(1); }
+            }
+            .noise-overlay {
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+              opacity: 0.05;
+              pointer-events: none;
+              mix-blend-mode: overlay;
+              z-index: 10;
+            }
+          `
+        }}
+      />
+
+      {/* Mesh Gradient Orbs */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '-20%',
+          left: '-10%',
+          width: '60vw',
+          height: '60vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(29, 78, 216, 0.15) 0%, rgba(29, 78, 216, 0) 70%)',
+          animation: 'float1 20s ease-in-out infinite',
+          filter: 'blur(80px)',
+        }}
+      />
+      
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: '-20%',
+          right: '-10%',
+          width: '70vw',
+          height: '70vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 70%)',
+          animation: 'float2 25s ease-in-out infinite',
+          filter: 'blur(100px)',
+        }}
+      />
+
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '20%',
+          right: '15%',
+          width: '40vw',
+          height: '40vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(147, 197, 253, 0.05) 0%, rgba(147, 197, 253, 0) 70%)',
+          animation: 'float3 18s ease-in-out infinite',
+          filter: 'blur(60px)',
+        }}
+      />
+
+      {/* Grid lines for a technical/aviation dashboard feel */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `
+            linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
+          `,
+          backgroundSize: '4vw 4vw',
+          maskImage: 'radial-gradient(circle at center, black, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(circle at center, black, transparent 80%)',
+          zIndex: 1,
+        }}
+      />
+
+      {/* Noise Texture for premium matte finish */}
+      <div className="noise-overlay" />
     </Box>
   );
 }

@@ -21,18 +21,20 @@ export function middleware(request: NextRequest) {
   // Verify if the path is an asset or public
   if (isStaticAsset(pathname) || publicPaths.includes(pathname) || pathname.startsWith('/api/auth/')) {
     // If user is already logged in (has token) and tries to access login/register, redirect to dashboard
-    if (token && (pathname === '/login' || pathname === '/register')) {
-      return NextResponse.redirect(new URL('/', request.url));
+    if (token && (pathname === '/login' || pathname === '/register' || pathname === '/')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     return NextResponse.next();
   }
 
   // If no token and trying to access a protected route (everything else)
-  if (!token) {
+  if (!token && pathname !== '/') {
     // Redirect to login page
     const loginUrl = new URL('/login', request.url);
     // loginUrl.searchParams.set('from', pathname); // Optional: remember where they were going
     return NextResponse.redirect(loginUrl);
+  } else if (!token && pathname === '/') {
+     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();

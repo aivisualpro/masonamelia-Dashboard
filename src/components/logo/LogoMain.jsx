@@ -1,7 +1,7 @@
 // material-ui
 import { useTheme } from '@mui/material/styles';
 
-const logoSrc = "/assets/images/logo.png";
+const logoSrc = "/logo.png";
 
 export default function LogoMain() {
   const theme = useTheme();

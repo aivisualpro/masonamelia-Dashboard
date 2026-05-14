@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     
     // Get paginated aircrafts
     const aircrafts = await Aircraft.find()
-      .select('title year price status category airframe engine engineTwo propeller propellerTwo location featuredImage contactAgent createdAt')
+      .select('title year price status category airframe engine engineTwo propeller propellerTwo location featuredImage images contactAgent createdAt')
       .populate('category', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)

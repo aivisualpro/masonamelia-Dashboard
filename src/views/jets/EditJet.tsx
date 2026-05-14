@@ -3,8 +3,6 @@
 import React, { useMemo, useState, useEffect, useRef, ChangeEvent } from 'react';
 import {
   Box,
-  Grid,
-  Paper,
   TextField,
   MenuItem,
   Button,
@@ -18,9 +16,11 @@ import {
   Alert,
   AlertColor
 } from '@mui/material';
-import { Delete as DeleteIcon, Upload as UploadIcon, Send as SendIcon } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { Delete as DeleteIcon, Upload as UploadIcon, Send as SendIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import 'react-quill/dist/quill.snow.css';
 import { getAircraftCategories } from '@/api/aircraftCategory.api';
 
@@ -150,11 +150,65 @@ async function parseBody(resp: Response): Promise<unknown> {
   return await resp.text();
 }
 
+// Quill dark-mode overrides
+const quillDarkSx = {
+  '& .ql-toolbar': {
+    borderColor: 'rgba(255,255,255,0.12) !important',
+    '& .ql-stroke': { stroke: 'rgba(255,255,255,0.7) !important' },
+    '& .ql-fill': { fill: 'rgba(255,255,255,0.7) !important' },
+    '& .ql-picker-label': { color: 'rgba(255,255,255,0.7) !important' },
+    '& .ql-picker-options': { backgroundColor: '#2a3350 !important', border: '1px solid rgba(255,255,255,0.12) !important' },
+    '& .ql-picker-item': { color: 'rgba(255,255,255,0.7) !important' },
+  },
+  '& .ql-container': {
+    borderColor: 'rgba(255,255,255,0.12) !important',
+    color: 'rgba(255,255,255,0.87)',
+    fontSize: 14,
+  },
+  '& .ql-editor.ql-blank::before': {
+    color: 'rgba(255,255,255,0.4) !important',
+  },
+};
+
+// ── Section Card ────────────────────────────────────────────────
+function SectionCard({ title, children, sx }: { title?: string; children: React.ReactNode; sx?: object }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  return (
+    <Box sx={{
+      backgroundColor: theme.palette.background.paper,
+      border: `1px solid ${theme.palette.divider}`,
+      borderRadius: 2,
+      p: 3,
+      ...(isDark ? quillDarkSx : {}),
+      ...sx,
+    }}>
+      {title && (
+        <Typography sx={{ fontSize: 14, fontWeight: 600, color: theme.palette.text.primary, mb: 2.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          {title}
+        </Typography>
+      )}
+      {children}
+    </Box>
+  );
+}
+
+// ── Field Row ───────────────────────────────────────────────────
+function FieldRow({ children }: { children: React.ReactNode }) {
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: `repeat(${React.Children.count(children)}, 1fr)` }, gap: 2 }}>
+      {children}
+    </Box>
+  );
+}
+
 interface EditJetProps {
   id: string;
 }
 
 export default function EditJet({ id }: EditJetProps) {
+  const theme = useTheme();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<SectionKey>('general');
 
   // gallery images
@@ -322,146 +376,138 @@ export default function EditJet({ id }: EditJetProps) {
   };
 
   // label overlap fix
-  const tf = { variant: 'outlined' as const, InputLabelProps: { shrink: true } };
+  const tf = {
+    variant: 'outlined' as const,
+    InputLabelProps: { shrink: true, sx: { fontSize: 15 } },
+    size: 'medium' as const,
+  };
+
+  const imgThumbStyle: React.CSSProperties = {
+    width: '100%',
+    height: 140,
+    objectFit: 'cover',
+    display: 'block',
+    borderRadius: 6,
+  };
 
   return (
-    <Box className="min-h-screen text-[#111218]">
-      {uploading && <LinearProgress className="mb-4" />}
+    <Box sx={{ flex: 1, overflow: 'auto' }}>
+      {uploading && <LinearProgress sx={{ mb: 2, borderRadius: 1 }} />}
 
-      <div className="border rounded-2xl p-6 mx-auto">
-        <Typography variant="h5" className="mb-6 font-bold">
-          Edit Aircraft
-        </Typography>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          {/* Basic fields */}
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={8}>
-              <TextField
-                label="Title"
-                fullWidth
-                required
-                {...tf}
-                {...register('title', { required: true })}
-                error={!!errors.title}
-                helperText={errors.title ? 'Required' : ''}
-              />
-            </Grid>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 700px' }, gap: 2, alignItems: 'start' }}>
 
-            <Grid item xs={12} md={4}>
-              {/* STATUS (controlled) */}
-              <Controller
-                name="status"
-                control={control}
-                defaultValue="for-sale"
-                render={({ field }) => (
-                  <TextField select label="Status" fullWidth {...tf} {...field}>
-                    {STATUS.map((s) => (
-                      <MenuItem key={s} value={s}>
-                        {s}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Grid>
+          {/* ════════════════ LEFT COLUMN ════════════════ */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-            <Grid item xs={12} md={3}>
-              <TextField label="Year" type="number" fullWidth {...tf} {...register('year')} />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField label="Price" type="number" fullWidth required {...tf} {...register('price', { required: true })} />
-            </Grid>
+            {/* Row 1: Title */}
+            <SectionCard title="Basic Information">
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                <TextField
+                  label="Title"
+                  fullWidth
+                  required
+                  {...tf}
+                  {...register('title', { required: true })}
+                  error={!!errors.title}
+                  helperText={errors.title ? 'Required' : ''}
+                />
+                {/* Row 2: Year, Price, Category */}
+                <FieldRow>
+                  <TextField label="Year" type="number" fullWidth {...tf} {...register('year')} />
+                  <TextField label="Price" type="number" fullWidth required {...tf} {...register('price', { required: true })} />
+                  <Controller
+                    name="category"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField select label="Category" fullWidth {...tf} {...field}>
+                        {categories?.map((s) => (
+                          <MenuItem key={s?._id} value={String(s?._id)}>{s?.name}</MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                </FieldRow>
+              </Box>
+            </SectionCard>
 
-            <Grid item xs={12} md={4}>
-              {/* CATEGORY (controlled) */}
-              <Controller
-                name="category"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField select label="Categories" fullWidth {...tf} {...field}>
-                    {categories?.map((s) => (
-                      <MenuItem key={s?._id} value={String(s?._id)}>
-                        {s?.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Grid>
+            {/* Row 3: Location */}
+            <SectionCard title="Location">
+              <FieldRow>
+                <TextField label="Location" fullWidth required {...tf} {...register('location', { required: true })} />
+                <TextField label="Latitude" fullWidth {...tf} {...register('latitude')} />
+                <TextField label="Longitude" fullWidth {...tf} {...register('longitude')} />
+              </FieldRow>
+            </SectionCard>
 
-            <Grid item xs={12} md={3}>
-              <TextField label="Location" fullWidth required {...tf} {...register('location', { required: true })} />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField label="Latitude" fullWidth {...tf} {...register('latitude')} />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField label="Longitude" fullWidth {...tf} {...register('longitude')} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Airframe" type="number" fullWidth {...tf} {...register('airframe')} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Engine" type="number" fullWidth {...tf} {...register('engine')} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Engine Two" type="number" fullWidth {...tf} {...register('engineTwo')} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Propeller" type="number" fullWidth {...tf} {...register('propeller')} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Propeller Two" type="number" fullWidth {...tf} {...register('propellerTwo')} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="List Index" type="number" fullWidth {...tf} {...register('index')} />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" className="mb-3 font-semibold">
-                Jet Overview
-              </Typography>
+            {/* Row 4: Airframe & Engines */}
+            <SectionCard title="Mechanical">
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                <FieldRow>
+                  <TextField label="Airframe" type="number" fullWidth {...tf} {...register('airframe')} />
+                  <TextField label="Engine One" type="number" fullWidth {...tf} {...register('engine')} />
+                  <TextField label="Engine Two" type="number" fullWidth {...tf} {...register('engineTwo')} />
+                </FieldRow>
+                {/* Row 5: Propellers & Status */}
+                <FieldRow>
+                  <TextField label="Propeller One" type="number" fullWidth {...tf} {...register('propeller')} />
+                  <TextField label="Propeller Two" type="number" fullWidth {...tf} {...register('propellerTwo')} />
+                  <Controller
+                    name="status"
+                    control={control}
+                    defaultValue="for-sale"
+                    render={({ field }) => (
+                      <TextField select label="Status" fullWidth {...tf} {...field}>
+                        {STATUS.map((s) => (
+                          <MenuItem key={s} value={s}>{s.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                </FieldRow>
+              </Box>
+            </SectionCard>
+
+            {/* Row 6: Contact Agent */}
+            <SectionCard title="Contact Agent">
+              <FieldRow>
+                <TextField label="Current Agent" fullWidth {...tf} {...register('agentName')} />
+                <TextField label="Email" type="email" fullWidth {...tf} {...register('agentEmail')} />
+                <TextField label="Phone" fullWidth {...tf} {...register('agentPhone')} />
+              </FieldRow>
+            </SectionCard>
+
+            {/* Row 7: Overview */}
+            <SectionCard title="Jet Overview">
               <Controller
                 control={control}
                 name="overview"
                 render={({ field }) => (
-                  <ReactQuill theme="snow" value={field.value || ''} onChange={field.onChange} placeholder="Write Overview here..." />
+                  <ReactQuill theme="snow" value={field.value || ''} onChange={field.onChange} placeholder="Write overview here..." />
                 )}
               />
-            </Grid>
-          </Grid>
+            </SectionCard>
 
-          {/* Contact Agent */}
-          <div className="rounded-xl">
-            <Typography variant="subtitle1" className="mb-3 font-semibold">
-              Contact Agent
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
-                <TextField label="Name" fullWidth {...tf} {...register('agentName')} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField label="Email" type="email" fullWidth {...tf} {...register('agentEmail')} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField label="Phone" fullWidth {...tf} {...register('agentPhone')} />
-              </Grid>
-            </Grid>
-          </div>
-
-          {/* Description */}
-          <div>
-            <Typography variant="subtitle1" className="mb-2 font-semibold">
-              Description
-            </Typography>
-            <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant="scrollable" scrollButtons allowScrollButtonsMobile>
-              {SECTION_KEYS.map((k) => (
-                <Tab key={k} value={k} label={SECTION_LABELS[k]} />
-              ))}
-            </Tabs>
-
-            <Box className="mt-4">
+            {/* Row 8: Description with tabs */}
+            <SectionCard title="Description">
+              <Tabs
+                value={activeTab}
+                onChange={(_, v) => setActiveTab(v)}
+                variant="scrollable"
+                scrollButtons
+                allowScrollButtonsMobile
+                sx={{
+                  mb: 2,
+                  minHeight: 36,
+                  '& .MuiTab-root': { minHeight: 36, fontSize: 13, textTransform: 'capitalize', px: 2 },
+                }}
+              >
+                {SECTION_KEYS.map((k) => (
+                  <Tab key={k} value={k} label={SECTION_LABELS[k]} />
+                ))}
+              </Tabs>
               {SECTION_KEYS.map((k) => (
                 <div key={k} hidden={activeTab !== k}>
                   <Controller
@@ -478,127 +524,133 @@ export default function EditJet({ id }: EditJetProps) {
                   />
                 </div>
               ))}
-            </Box>
-          </div>
+            </SectionCard>
 
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" className="mb-4 font-semibold">
-              Video URL
-            </Typography>
-            <TextField label="Video URL" type="text" fullWidth {...tf} {...register('videoUrl')} />
-          </Grid>
+            {/* Index */}
+            <SectionCard title="Listing Settings">
+              <TextField label="List Index" type="number" fullWidth {...tf} {...register('index')} />
+            </SectionCard>
+          </Box>
 
-          {/* Featured Image */}
-          <div>
-            <Typography variant="subtitle1" className="mb-2 font-semibold">
-              Featured Image
-            </Typography>
+          {/* ════════════════ RIGHT COLUMN ════════════════ */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, position: { lg: 'sticky' }, top: { lg: 16 } }}>
 
-            <div className="flex items-center gap-3">
-              <Button variant="contained" component="label" startIcon={<UploadIcon />}>
-                {featuredLocal ? 'Change Featured' : 'Select Featured'}
-                <input ref={featuredInputRef} hidden accept="image/*" type="file" onChange={onFeaturedChange} />
-              </Button>
-              <Chip label={featuredLocal ? '1 new selected' : featuredExisting ? 'Using existing' : 'None'} />
-              {featuredLocal && (
-                <Button size="small" variant="text" color="error" onClick={clearFeaturedLocal} startIcon={<DeleteIcon />}>
-                  Remove New
+            {/* Video URL */}
+            <SectionCard title="Video">
+              <TextField label="Video URL" type="text" fullWidth {...tf} {...register('videoUrl')} />
+            </SectionCard>
+
+            {/* Featured Image */}
+            <SectionCard title="Featured Image">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Button variant="contained" component="label" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }}>
+                  {featuredLocal ? 'Change' : 'Upload'}
+                  <input ref={featuredInputRef} hidden accept="image/*" type="file" onChange={onFeaturedChange} />
                 </Button>
+                <Chip size="small" label={featuredLocal ? '1 new' : featuredExisting ? 'Existing' : 'None'} />
+                {featuredLocal && (
+                  <IconButton size="small" color="error" onClick={clearFeaturedLocal}><DeleteIcon fontSize="small" /></IconButton>
+                )}
+              </Box>
+              {(featuredLocal || featuredExisting) && (
+                <Box sx={{ borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
+                  <img
+                    src={featuredLocal ? URL.createObjectURL(featuredLocal) : (featuredExisting || '')}
+                    alt="Featured"
+                    style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }}
+                  />
+                </Box>
               )}
-            </div>
+            </SectionCard>
 
-            {/* Preview: new takes precedence, else show existing */}
-            <Grid container spacing={2} className="mt-2">
-              {featuredLocal ? (
-                <Grid item xs={12} sm={6} md={4} lg={3}>
-                  <Paper className="relative border rounded-xl overflow-hidden">
-                    <img src={URL.createObjectURL(featuredLocal)} alt={featuredLocal.name} style={{ width: '100%', height: 'auto', display: 'block' }} />
-                    <Typography variant="caption" className="block p-2 truncate">
-                      {featuredLocal.name}
-                    </Typography>
-                  </Paper>
-                </Grid>
-              ) : featuredExisting ? (
-                <Grid item xs={12} sm={6} md={4} lg={3}>
-                  <Paper className="relative border rounded-xl overflow-hidden">
-                    <img src={featuredExisting} alt="featured" style={{ width: '100%', height: 'auto', display: 'block' }} />
-                    <Typography variant="caption" className="block p-2 truncate">
-                      Existing featured
-                    </Typography>
-                  </Paper>
-                </Grid>
-              ) : null}
-            </Grid>
-          </div>
+            {/* Gallery Images */}
+            <SectionCard title="Gallery Images">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Button variant="contained" component="label" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }}>
+                  Add Images
+                  <input hidden accept="image/*" type="file" multiple onChange={onImagesChange} />
+                </Button>
+                <Chip size="small" label={`${imagesExisting.length + imagesLocal.length} total`} />
+              </Box>
 
-          {/* Gallery Images */}
-          <div>
-            <Typography variant="subtitle1" className="mb-2 font-semibold">
-              Images
-            </Typography>
-
-            {imagesExisting.length > 0 && (
-              <>
-                <Typography variant="body2" className="mb-1">
-                  Existing (kept unless removed):
-                </Typography>
-                <Grid container spacing={2} className="mb-2">
+              {/* Existing images */}
+              {imagesExisting.length > 0 && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 1.5, mb: imagesLocal.length > 0 ? 2 : 0 }}>
                   {imagesExisting.map((url, idx) => (
-                    <Grid item xs={6} sm={4} md={3} lg={2} key={url + idx}>
-                      <Paper className="relative border rounded-xl overflow-hidden">
-                        <img src={url} alt={`img-${idx}`} style={{ maxWidth: '100%' }} />
-                        <Box className="absolute top-1 right-1 bg-black/60 rounded-md">
-                          <IconButton size="small" onClick={() => removeExistingImage(idx)}>
-                            <DeleteIcon fontSize="small" className="text-red-500" />
-                          </IconButton>
-                        </Box>
-                      </Paper>
-                    </Grid>
+                    <Box key={url + idx} sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
+                      <img src={url} alt={`img-${idx}`} style={imgThumbStyle} />
+                      <IconButton
+                        size="small"
+                        onClick={() => removeExistingImage(idx)}
+                        sx={{
+                          position: 'absolute', top: 6, right: 6,
+                          backgroundColor: 'rgba(0,0,0,0.6)', color: '#ef4444',
+                          '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
+                          width: 28, height: 28,
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
                   ))}
-                </Grid>
-              </>
-            )}
+                </Box>
+              )}
 
-            <div className="flex items-center gap-3">
-              <Button variant="contained" component="label" startIcon={<UploadIcon />}>
-                Add Images
-                <input hidden accept="image/*" type="file" multiple onChange={onImagesChange} />
-              </Button>
-              <Chip label={`${imagesLocal.length} new selected`} />
-            </div>
-
-            {imagesLocal.length > 0 && (
-              <Grid container spacing={2} className="mt-2">
-                {imagesLocal.map((f, idx) => (
-                  <Grid item xs={6} sm={4} md={3} lg={2} key={idx}>
-                    <Paper className="relative border rounded-xl overflow-hidden">
-                      <img src={URL.createObjectURL(f)} alt={f.name} style={{ maxWidth: '100%' }} />
-                      <Box className="absolute top-1 right-1 bg-black/60 rounded-md">
-                        <IconButton size="small" onClick={() => removeLocalImage(idx)}>
-                          <DeleteIcon fontSize="small" className="text-red-600" />
+              {/* New images */}
+              {imagesLocal.length > 0 && (
+                <>
+                  <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary, mb: 1 }}>New uploads:</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 1.5 }}>
+                    {imagesLocal.map((f, idx) => (
+                      <Box key={idx} sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
+                        <img src={URL.createObjectURL(f)} alt={f.name} style={imgThumbStyle} />
+                        <IconButton
+                          size="small"
+                          onClick={() => removeLocalImage(idx)}
+                          sx={{
+                            position: 'absolute', top: 6, right: 6,
+                            backgroundColor: 'rgba(0,0,0,0.6)', color: '#ef4444',
+                            '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
+                            width: 28, height: 28,
+                          }}
+                        >
+                          <DeleteIcon sx={{ fontSize: 16 }} />
                         </IconButton>
+                        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, px: 1, py: 0.5, backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                          <Typography sx={{ fontSize: 11, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</Typography>
+                        </Box>
                       </Box>
-                      <Typography variant="caption" className="block p-2 truncate">
-                        {f.name}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          </div>
+                    ))}
+                  </Box>
+                </>
+              )}
+            </SectionCard>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3" style={{ marginTop: '1rem' }}>
-            <Button variant="contained" type="submit" endIcon={<SendIcon />} disabled={uploading}>
-              Update Aircraft
-            </Button>
-            <Button type="button" variant="outlined" onClick={() => reset()}>
-              Reset
-            </Button>
-          </div>
-        </form>
-      </div>
+            {/* Actions */}
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
+              <Button
+                variant="contained"
+                type="submit"
+                endIcon={<SendIcon />}
+                disabled={uploading}
+                fullWidth
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: 14, py: 1.25, borderRadius: 2 }}
+              >
+                {uploading ? 'Saving…' : 'Update Aircraft'}
+              </Button>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => reset()}
+                sx={{ textTransform: 'none', fontWeight: 500, fontSize: 14, py: 1.25, borderRadius: 2, minWidth: 90 }}
+              >
+                Reset
+              </Button>
+            </Box>
+          </Box>
+
+        </Box>
+      </form>
 
       <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
         <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>

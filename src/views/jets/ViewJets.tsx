@@ -1,10 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { DataGrid, GridToolbar, GridColDef, GridRowId } from '@mui/x-data-grid';
 import {
-  Paper,
-  Typography,
   Box,
   Button,
   Stack,
@@ -19,29 +16,23 @@ import {
   MenuItem,
   CircularProgress
 } from '@mui/material';
-import { alpha, useTheme, Theme } from '@mui/material/styles';
-import AddIcon from '@mui/icons-material/Add';
+import { alpha, useTheme } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
+import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
+import CloseIcon from '@mui/icons-material/Close';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useRouter } from 'next/navigation';
 import { purple } from '@mui/material/colors';
-import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/aircrafts`;
 const BULK_DELETE_URL = `${API_BASE}/bulkDelete`;
 
-// Status options (slugs)
 const STATUS_OPTIONS = ['for-sale', 'sold', 'wanted', 'coming-soon', 'sale-pending', 'off-market', 'acquired'] as const;
-type StatusOption = typeof STATUS_OPTIONS[number];
 
 const numberFmt = new Intl.NumberFormat('en-US');
-
-const SECTION_KEYS = ['general', 'airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'] as const;
-
-interface DescriptionSection {
-  html?: string;
-}
 
 interface AircraftDoc {
   _id?: string;
@@ -58,20 +49,18 @@ interface AircraftDoc {
   propellerTwo?: string;
   location?: string;
   featuredImage?: string;
+  images?: string[];
   contactAgent?: {
     name?: string;
     phone?: string;
     email?: string;
   };
-  description?: {
-    sections?: Record<string, DescriptionSection>;
-  };
 }
 
 interface AircraftRow {
   id: string;
-  index: number;
   image: string;
+  images: string[];
   title: string;
   year: number | null;
   price: number | string | null;
@@ -97,33 +86,19 @@ interface ConfirmState {
   title: string;
 }
 
-const stripHtml = (html: string = ''): string =>
-  String(html)
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const pickDescriptionText = (doc: AircraftDoc): { full: string; short: string } => {
-  const sections = doc?.description?.sections || {};
-  const firstHtml = SECTION_KEYS.map((k) => sections?.[k]?.html).find(Boolean);
-  const full = stripHtml(firstHtml || '');
-  const short = full.length > 120 ? full.slice(0, 120) + '…' : full;
-  return { full, short };
-};
-
-/* ------------ Status Pill (soft badge) ------------ */
-interface StatusPillProps {
-  value?: string;
+interface CarouselState {
+  open: boolean;
+  images: string[];
+  currentIndex: number;
+  title: string;
 }
 
-function StatusPill({ value }: StatusPillProps) {
+/* ------------ Status Pill ------------ */
+function StatusPill({ value }: { value?: string }) {
   const theme = useTheme();
   const slug = String(value || '').toLowerCase();
   const label = slug
-    ? slug
-        .split('-')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ')
+    ? slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     : '—';
 
   const pal = theme.palette;
@@ -135,26 +110,14 @@ function StatusPill({ value }: StatusPillProps) {
 
   const colors = (() => {
     switch (slug) {
-      case 'for-sale':
-        return tone('success');
-      case 'sold':
-        return tone('error');
-      case 'wanted':
-        return tone('info');
-      case 'coming-soon':
-        return tone('warning');
-      case 'sale-pending':
-        return {
-          bg: alpha(purple[500], 0.14),
-          fg: purple[700],
-          bd: alpha(purple[500], 0.28)
-        };
-      case 'off-market':
-        return { bg: alpha(pal.grey[500], 0.18), fg: pal.grey[800], bd: alpha(pal.grey[600], 0.26) };
-      case 'acquired':
-        return tone('primary');
-      default:
-        return { bg: alpha(pal.grey[400], 0.18), fg: pal.text.primary, bd: alpha(pal.grey[500], 0.26) };
+      case 'for-sale': return tone('success');
+      case 'sold': return tone('error');
+      case 'wanted': return tone('info');
+      case 'coming-soon': return tone('warning');
+      case 'sale-pending': return { bg: alpha(purple[500], 0.14), fg: purple[700], bd: alpha(purple[500], 0.28) };
+      case 'off-market': return { bg: alpha(pal.grey[500], 0.18), fg: pal.grey[800], bd: alpha(pal.grey[600], 0.26) };
+      case 'acquired': return tone('primary');
+      default: return { bg: alpha(pal.grey[400], 0.18), fg: pal.text.primary, bd: alpha(pal.grey[500], 0.26) };
     }
   })();
 
@@ -176,14 +139,8 @@ function StatusPill({ value }: StatusPillProps) {
   );
 }
 
-/* ------------ Per-row Status Menu (inside Actions) ------------ */
-interface RowStatusMenuProps {
-  rowId: string;
-  currentStatus: string;
-  onUpdated?: (id: string, newStatus: string) => void;
-}
-
-function RowStatusMenu({ rowId, currentStatus, onUpdated }: RowStatusMenuProps) {
+/* ------------ Per-row Status Menu ------------ */
+function RowStatusMenu({ rowId, currentStatus, onUpdated }: { rowId: string; currentStatus: string; onUpdated?: (id: string, newStatus: string) => void }) {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [saving, setSaving] = React.useState(false);
   const open = Boolean(anchorEl);
@@ -196,14 +153,8 @@ function RowStatusMenu({ rowId, currentStatus, onUpdated }: RowStatusMenuProps) 
       setSaving(true);
       const fd = new FormData();
       fd.append('status', newStatus);
-      const res = await fetch(`${API_BASE}/update/${rowId}`, {
-        method: 'PUT',
-        body: fd
-      });
-      if (!res.ok) {
-        const t = await res.text();
-        throw new Error(`Update failed: ${res.status} ${t}`);
-      }
+      const res = await fetch(`${API_BASE}/update/${rowId}`, { method: 'PUT', body: fd });
+      if (!res.ok) throw new Error(`Update failed: ${res.status}`);
       onUpdated?.(rowId, newStatus);
     } finally {
       setSaving(false);
@@ -214,7 +165,7 @@ function RowStatusMenu({ rowId, currentStatus, onUpdated }: RowStatusMenuProps) 
   return (
     <>
       <Tooltip title="Change status">
-        <span className="flex">
+        <span style={{ display: 'inline-flex' }}>
           <IconButton size="small" onClick={handleOpen} disabled={saving}>
             {saving ? <CircularProgress size={18} /> : <ChangeCircleIcon fontSize="small" />}
           </IconButton>
@@ -223,9 +174,7 @@ function RowStatusMenu({ rowId, currentStatus, onUpdated }: RowStatusMenuProps) 
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         {STATUS_OPTIONS.map((s) => (
           <MenuItem key={s} selected={s === currentStatus} onClick={() => updateStatus(s)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StatusPill value={s} />
-            </div>
+            <StatusPill value={s} />
           </MenuItem>
         ))}
       </Menu>
@@ -233,12 +182,120 @@ function RowStatusMenu({ rowId, currentStatus, onUpdated }: RowStatusMenuProps) 
   );
 }
 
+/* ------------ Image Carousel Dialog ------------ */
+function ImageCarouselDialog({ carousel, onClose }: { carousel: CarouselState; onClose: () => void }) {
+  const [idx, setIdx] = React.useState(carousel.currentIndex);
+
+  React.useEffect(() => {
+    setIdx(carousel.currentIndex);
+  }, [carousel.currentIndex]);
+
+  React.useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (!carousel.open) return;
+      if (e.key === 'ArrowLeft') setIdx((i) => (i > 0 ? i - 1 : carousel.images.length - 1));
+      if (e.key === 'ArrowRight') setIdx((i) => (i < carousel.images.length - 1 ? i + 1 : 0));
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [carousel.open, carousel.images.length, onClose]);
+
+  if (!carousel.open || !carousel.images.length) return null;
+
+  return (
+    <Dialog
+      open={carousel.open}
+      onClose={onClose}
+      maxWidth={false}
+      PaperProps={{
+        sx: {
+          bgcolor: 'rgba(0,0,0,0.95)',
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          width: 'auto',
+          borderRadius: 2,
+          overflow: 'hidden',
+        }
+      }}
+    >
+      <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', px: 2, py: 1.5 }}>
+          <Box sx={{ color: 'white', fontSize: 14, fontWeight: 500, opacity: 0.8 }}>
+            {carousel.title} — {idx + 1} of {carousel.images.length}
+          </Box>
+          <IconButton onClick={onClose} sx={{ color: 'white' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        {/* Image */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400, px: 6, pb: 3 }}>
+          {carousel.images.length > 1 && (
+            <IconButton
+              onClick={() => setIdx((i) => (i > 0 ? i - 1 : carousel.images.length - 1))}
+              sx={{ position: 'absolute', left: 8, color: 'white', bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            >
+              <ChevronLeftIcon fontSize="large" />
+            </IconButton>
+          )}
+          <img
+            src={carousel.images[idx]}
+            alt={`${carousel.title} - ${idx + 1}`}
+            style={{ maxWidth: '80vw', maxHeight: '70vh', objectFit: 'contain', borderRadius: 8 }}
+          />
+          {carousel.images.length > 1 && (
+            <IconButton
+              onClick={() => setIdx((i) => (i < carousel.images.length - 1 ? i + 1 : 0))}
+              sx={{ position: 'absolute', right: 8, color: 'white', bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            >
+              <ChevronRightIcon fontSize="large" />
+            </IconButton>
+          )}
+        </Box>
+
+        {/* Thumbnails */}
+        {carousel.images.length > 1 && (
+          <Box sx={{ display: 'flex', gap: 1, px: 2, pb: 2, overflowX: 'auto', maxWidth: '80vw' }}>
+            {carousel.images.map((img, i) => (
+              <Box
+                key={i}
+                onClick={() => setIdx(i)}
+                sx={{
+                  width: 56,
+                  height: 40,
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  border: i === idx ? '2px solid #fff' : '2px solid transparent',
+                  opacity: i === idx ? 1 : 0.5,
+                  transition: 'all 0.15s ease',
+                  '&:hover': { opacity: 1 },
+                }}
+              >
+                <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+    </Dialog>
+  );
+}
+
+/* ============== MAIN TABLE ============== */
 export default function AircraftTable() {
+  const theme = useTheme();
   const [loading, setLoading] = React.useState(true);
   const [aircrafts, setAircrafts] = React.useState<AircraftDoc[]>([]);
-  const [selection, setSelection] = React.useState<GridRowId[]>([]);
   const [confirm, setConfirm] = React.useState<ConfirmState>({ open: false, mode: null, ids: [], title: '' });
   const [deleting, setDeleting] = React.useState(false);
+  const [carousel, setCarousel] = React.useState<CarouselState>({ open: false, images: [], currentIndex: 0, title: '' });
+  const [visibleCount, setVisibleCount] = React.useState(20);
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   const router = useRouter();
 
@@ -255,30 +312,28 @@ export default function AircraftTable() {
     }
   }, []);
 
-  React.useEffect(() => {
-    fetchRows();
-  }, [fetchRows]);
+  React.useEffect(() => { fetchRows(); }, [fetchRows]);
 
-  // apply local change after successful PUT
   const handleStatusUpdated = React.useCallback((id: string, newStatus: string) => {
     setAircrafts((prev) =>
       (prev || []).map((d) => {
         const docId = d._id || d.id;
-        if (String(docId) === String(id)) {
-          return { ...d, status: newStatus };
-        }
-        return d;
+        return String(docId) === String(id) ? { ...d, status: newStatus } : d;
       })
     );
   }, []);
 
   const rows: AircraftRow[] = React.useMemo(() => {
-    return (aircrafts || []).map((d, ind) => {
+    return (aircrafts || []).map((d) => {
       const toNum = (v: unknown): number | null => (v === undefined || v === null || v === '' ? null : Number(v));
+      const allImages: string[] = [];
+      if (d.featuredImage) allImages.push(d.featuredImage);
+      if (Array.isArray(d.images)) allImages.push(...d.images.filter((img) => img && img !== d.featuredImage));
+
       return {
         id: d._id || d.id || '',
-        index: ind + 1,
         image: d.featuredImage || '',
+        images: allImages,
         title: d.title ?? '',
         year: toNum(d.year),
         price: d.price ? toNum(d.price) : 'Call',
@@ -287,7 +342,7 @@ export default function AircraftTable() {
         airframe: d.airframe,
         engine: `${d.engineTwo ? `${d.engine} / ${d.engineTwo}` : `${d.engine}`}`,
         propeller: `${d.propellerTwo ? `${d.propeller} / ${d.propellerTwo}` : `${d.propeller}`}`,
-        location: d.location ? d.location : 'Not Define',
+        location: d.location ? d.location : 'Not Defined',
         agent: d.contactAgent?.name || d.contactAgent?.email || '',
         _agent: {
           name: d.contactAgent?.name || '',
@@ -299,8 +354,25 @@ export default function AircraftTable() {
     });
   }, [aircrafts]);
 
+  const visibleRows = React.useMemo(() => rows.slice(0, visibleCount), [rows, visibleCount]);
+  const hasMore = visibleCount < rows.length;
+
+  // Infinite scroll via IntersectionObserver
+  React.useEffect(() => {
+    if (!sentinelRef.current || !scrollContainerRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          setVisibleCount((prev) => Math.min(prev + 20, rows.length));
+        }
+      },
+      { root: scrollContainerRef.current, threshold: 0.1 }
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, rows.length]);
+
   const openConfirmSingle = (row: AircraftRow) => setConfirm({ open: true, mode: 'single', ids: [row.id], title: row.title || '' });
-  const openConfirmBulk = () => setConfirm({ open: true, mode: 'bulk', ids: selection as (string | number)[], title: `${selection.length} items` });
   const closeConfirm = () => setConfirm((c) => ({ ...c, open: false }));
 
   const handleConfirmDelete = async () => {
@@ -315,7 +387,6 @@ export default function AircraftTable() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ids: confirm.ids })
         });
-        setSelection([]);
       }
       await fetchRows();
     } catch (e) {
@@ -326,112 +397,169 @@ export default function AircraftTable() {
     }
   };
 
-  const columns: GridColDef<AircraftRow>[] = React.useMemo(
-    () => [
-      { field: 'index', headerName: 'Index', width: 90, type: 'number' },
-      { field: 'image', headerName: 'Image', width: 120, renderCell: (params) => <div className="w-full h-full p-1"><img src={params?.value} alt="" className="w-full h-full object-cover rounded-md" loading="lazy" /></div> },
-      { field: 'title', headerName: 'Title', flex: 1, minWidth: 220 },
-      { field: 'year', headerName: 'Year', width: 90, type: 'number' },
-      { field: 'price', headerName: 'Price', width: 120, type: 'number' },
-      {
-        field: 'status',
-        headerName: 'Status',
-        width: 150,
-        renderCell: (params) => <StatusPill value={params?.value} />
-      },
-      { field: 'category', headerName: 'Category', width: 150 },
-      { field: 'airframe', headerName: 'Airframe', width: 150 },
-      { field: 'engine', headerName: 'Engine', width: 150 },
-      { field: 'propeller', headerName: 'Propeller', width: 150 },
-      { field: 'location', headerName: 'Location', flex: 0.8, minWidth: 150 },
-      {
-        field: 'agent',
-        headerName: 'Contact Agent',
-        width: 220,
-        renderCell: (params) => {
-          const a = params?.row?._agent || {};
-          const tooltip = [a?.name, a?.phone, a?.email].filter(Boolean).join(' | ');
-          return (
-            <div title={tooltip} style={{ lineHeight: 1.2 }}>
-              <div style={{ fontWeight: 600 }}>{a?.name || '-'}</div>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>{a?.phone || ''}</div>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>{a?.email || ''}</div>
-            </div>
-          );
-        }
-      },
-      {
-        field: 'actions',
-        headerName: 'Actions',
-        width: 150,
-        sortable: false,
-        filterable: false,
-        renderCell: (params) => (
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="View">
-              <a className='flex items-start h-full' href={`https://skynet.skynetsilicon.com/showroom/${params.row.id}`} target="_blank" rel="noopener noreferrer">
-                <IconButton size="small">
-                  <RemoveRedEyeIcon fontSize="small" />
-                </IconButton>
-              </a>
-            </Tooltip>
-            <Tooltip title="Edit">
-              <IconButton size="small" onClick={() => router.push(`/jets/edit/${params.row.id}`)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => openConfirmSingle(params.row)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <RowStatusMenu rowId={params.row.id} currentStatus={params.row.status} onUpdated={handleStatusUpdated} />
-          </Stack>
-        )
-      }
-    ],
-    [router, handleStatusUpdated]
-  );
+  const openCarousel = (row: AircraftRow) => {
+    const imgs = row.images.length > 0 ? row.images : (row.image ? [row.image] : []);
+    if (imgs.length === 0) return;
+    setCarousel({ open: true, images: imgs, currentIndex: 0, title: row.title });
+  };
+
+  const isDark = theme.palette.mode === 'dark';
+
+  const thStyle: React.CSSProperties = {
+    height: 40,
+    padding: '0 16px',
+    textAlign: 'left',
+    verticalAlign: 'middle',
+    fontWeight: 500,
+    fontSize: 12,
+    color: theme.palette.text.secondary,
+    whiteSpace: 'nowrap',
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  };
+
+  const tdStyle: React.CSSProperties = {
+    padding: '10px 16px',
+    verticalAlign: 'middle',
+    fontSize: 13,
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    color: theme.palette.text.primary,
+    whiteSpace: 'nowrap',
+  };
 
   return (
-    <Box className="w-full">
-      <Paper elevation={0} sx={{ minHeight: '75vh' }} className="rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="flex items-center gap-3">
-            <Typography variant="h6" className="font-bold">
-              Aircrafts
-            </Typography>
-            <span className="text-xs text-zinc-500">{numberFmt.format(rows.length)} items</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {selection.length > 0 && (
-              <Button color="error" variant="outlined" onClick={openConfirmBulk} startIcon={<DeleteIcon />}>
-                Delete Selected ({selection.length})
-              </Button>
+    <>
+      <Box sx={{
+        width: '100%',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        border: `1px solid ${theme.palette.divider}`,
+        borderRadius: 2,
+      }}>
+        {/* Table scroll area */}
+        <Box ref={scrollContainerRef} sx={{ flex: 1, overflow: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10 }}>Title</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 88 }}>Image</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 70 }}>Year</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Price</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 120 }}>Status</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Category</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Airframe</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Engine</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 160 }}>Location</th>
+                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 100 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={10} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none' }}>
+                    <CircularProgress size={28} />
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={10} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none', color: theme.palette.text.secondary }}>
+                    No aircraft found.
+                  </td>
+                </tr>
+              ) : (
+                visibleRows.map((row) => (
+                  <tr
+                    key={row.id}
+                    style={{ transition: 'background-color 0.15s ease' }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+                  >
+                    <td
+                      style={{ ...tdStyle, fontWeight: 600, cursor: 'pointer' }}
+                      onClick={() => router.push(`/jets/edit/${row.id}`)}
+                    >{row.title}</td>
+                    <td style={{ ...tdStyle, padding: '6px 16px', width: 88 }}>
+                      {row.image ? (
+                        <img
+                          src={row.image}
+                          alt={row.title}
+                          onClick={() => openCarousel(row)}
+                          style={{
+                            height: 40,
+                            width: 64,
+                            objectFit: 'cover',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            transition: 'opacity 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.8'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span style={{ color: theme.palette.text.disabled, fontSize: 12 }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ ...tdStyle, width: 70 }}>{row.year || '—'}</td>
+                    <td style={{ ...tdStyle, width: 110 }}>{row.price && row.price !== 'Call' ? `$${numberFmt.format(Number(row.price))}` : 'Call'}</td>
+                    <td style={{ ...tdStyle, width: 120 }}><StatusPill value={row.status} /></td>
+                    <td style={{ ...tdStyle, width: 110 }}>{row.category || '—'}</td>
+                    <td style={{ ...tdStyle, width: 110 }}>{row.airframe || '—'}</td>
+                    <td style={{ ...tdStyle, width: 110 }}>{row.engine || '—'}</td>
+                    <td style={{ ...tdStyle, width: 160 }}>{row.location || '—'}</td>
+                    <td style={{ ...tdStyle, width: 100 }}>
+                      <Stack direction="row" spacing={0.25}>
+                        <Tooltip title="View on site">
+                          <a href={`https://masonamelia.vercel.app/showroom/${row.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex' }}>
+                            <IconButton size="small"><RemoveRedEyeIcon fontSize="small" /></IconButton>
+                          </a>
+                        </Tooltip>
+                        <RowStatusMenu rowId={row.id} currentStatus={row.status} onUpdated={handleStatusUpdated} />
+                      </Stack>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          {/* Infinite scroll sentinel */}
+          {hasMore && !loading && (
+            <div ref={sentinelRef} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CircularProgress size={20} />
+            </div>
+          )}
+        </Box>
+
+        {/* Footer — inside the bordered container */}
+        {!loading && rows.length > 0 && (
+          <Box sx={{
+            flexShrink: 0,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            borderTop: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.paper,
+            fontSize: 13,
+            color: theme.palette.text.secondary,
+          }}>
+            <span>
+              Showing <strong style={{ color: theme.palette.text.primary }}>{visibleRows.length}</strong> of <strong style={{ color: theme.palette.text.primary }}>{rows.length}</strong> aircraft
+            </span>
+            {hasMore && (
+              <span style={{ fontSize: 12, opacity: 0.6 }}>Scroll down to load more</span>
             )}
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push('/jets/add')}>
-              Add Aircraft
-            </Button>
-          </div>
-        </div>
+          </Box>
+        )}
+      </Box>
 
-        <div style={{ width: '100%' }} className="p-2">
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            loading={loading}
-            checkboxSelection
-            disableRowSelectionOnClick
-            onRowSelectionModelChange={(m) => setSelection(m as unknown as GridRowId[])}
-            slots={{ toolbar: GridToolbar }}
-            slotProps={{ toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 300 } } }}
-            sx={{ minHeight: '75vh', border: 0 }}
-            initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
-            pageSizeOptions={[10, 25, 50, 100]}
-          />
-        </div>
-      </Paper>
-
+      {/* Delete Confirm Dialog */}
       <Dialog open={confirm.open} onClose={deleting ? undefined : closeConfirm}>
         <DialogTitle>
           {confirm.mode === 'single' ? `Delete "${confirm.title}"?` : `Delete ${confirm.ids.length} selected item(s)?`}
@@ -440,14 +568,15 @@ export default function AircraftTable() {
           Are you sure you want to delete {confirm.mode === 'single' ? 'this item' : 'these items'}? This action cannot be undone.
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeConfirm} disabled={deleting} variant="outlined">
-            Cancel
-          </Button>
+          <Button onClick={closeConfirm} disabled={deleting} variant="outlined">Cancel</Button>
           <Button onClick={handleConfirmDelete} disabled={deleting} color="error" variant="contained">
             {deleting ? 'Deleting…' : 'Yes, Delete'}
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+
+      {/* Image Carousel Dialog */}
+      <ImageCarouselDialog carousel={carousel} onClose={() => setCarousel((c) => ({ ...c, open: false }))} />
+    </>
   );
 }

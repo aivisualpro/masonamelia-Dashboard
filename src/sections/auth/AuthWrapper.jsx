@@ -1,12 +1,9 @@
 import PropTypes from 'prop-types';
 
 // material-ui
-import Grid from '@mui/material/Grid2';
 import Box from '@mui/material/Box';
 
 // project imports
-import AuthFooter from 'components/cards/AuthFooter';
-import Logo from 'components/logo';
 import AuthCard from './AuthCard';
 
 // assets
@@ -16,25 +13,76 @@ import AuthBackground from './AuthBackground';
 
 export default function AuthWrapper({ children }) {
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: { xs: 2, sm: 4 }
+      }}
+    >
       <AuthBackground />
-      <Grid container direction="column" justifyContent="flex-end" sx={{ minHeight: '100vh' }}>
-        <Grid sx={{ px: 3 }} size={12}>
-          <Logo to="/" />
-        </Grid>
-        <Grid size={12}>
-          <Grid
-            container
-            justifyContent="center"
-            alignItems="center"
-            sx={{ minHeight: { xs: 'calc(100vh - 210px)', sm: 'calc(100vh - 134px)', md: 'calc(100vh - 132px)' } }}
+      
+      {/* Central Login Container with Entrance Animation */}
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 480,
+          zIndex: 10,
+          animation: 'fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',
+          '@keyframes fadeInUp': {
+            '0%': { 
+              opacity: 0, 
+              transform: 'translateY(40px) scale(0.98)',
+              filter: 'blur(10px)'
+            },
+            '100%': { 
+              opacity: 1, 
+              transform: 'translateY(0) scale(1)',
+              filter: 'blur(0)'
+            },
+          },
+        }}
+      >
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            mb: 4,
+            animation: 'floatLogo 6s ease-in-out infinite',
+            '@keyframes floatLogo': {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-5px)' },
+            }
+          }}
+        >
+          <img
+            src="/assets/images/logo.png"
+            alt="Mason Amelia"
+            style={{
+              maxWidth: 220,
+            }}
+          />
+        </Box>
+        
+        <AuthCard>{children}</AuthCard>
+        
+        {/* Footer Text */}
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Box 
+            component="p" 
+            sx={{ 
+              color: 'rgba(255,255,255,0.4)', 
+              fontSize: '0.8rem',
+              letterSpacing: '0.05em' 
+            }}
           >
-            <Grid>
-              <AuthCard>{children}</AuthCard>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
+            © {new Date().getFullYear()} MASON AMELIA. ALL RIGHTS RESERVED.
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
+import { useMemo, useState, createContext, useEffect } from 'react';
 
 // material-ui
 import StyledEngineProvider from '@mui/material/StyledEngineProvider';
@@ -13,10 +13,34 @@ import Typography from './typography';
 import CustomShadows from './shadows';
 import componentsOverride from './overrides';
 
+// ==============================|| THEME MODE CONTEXT ||============================== //
+
+export const ThemeModeContext = createContext({
+  mode: 'light',
+  toggleMode: () => {}
+});
+
 // ==============================|| DEFAULT THEME - MAIN ||============================== //
 
 export default function ThemeCustomization({ children }) {
-  const theme = Palette('light', 'default');
+  const [mode, setMode] = useState('light');
+
+  useEffect(() => {
+    const savedMode = localStorage.getItem('theme_mode');
+    if (savedMode === 'dark' || savedMode === 'light') {
+      setMode(savedMode);
+    }
+  }, []);
+
+  const toggleMode = () => {
+    setMode((prev) => {
+      const newMode = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme_mode', newMode);
+      return newMode;
+    });
+  };
+
+  const theme = Palette(mode, 'default');
 
   const themeTypography = Typography(`'Public Sans', sans-serif`);
   const themeCustomShadows = useMemo(() => CustomShadows(theme), [theme]);
@@ -51,12 +75,14 @@ export default function ThemeCustomization({ children }) {
   themes.components = componentsOverride(themes);
 
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={themes}>
-        <CssBaseline enableColorScheme />
-        {children}
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <ThemeModeContext.Provider value={{ mode, toggleMode }}>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={themes}>
+          <CssBaseline enableColorScheme />
+          {children}
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </ThemeModeContext.Provider>
   );
 }
 
