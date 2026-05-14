@@ -9,7 +9,7 @@ export async function GET(
   await dbConnect();
   
   try {
-    const review = await Review.findById(params.id);
+    const review = await Review.findById(params.id).lean();
     
     if (!review) {
       return NextResponse.json(

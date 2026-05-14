@@ -1,4 +1,5 @@
 // src/pages/team/AddTeam.jsx
+import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from 'react';
 import { Box, Grid, TextField, Button, Typography, LinearProgress, Snackbar, Alert, Paper, FormHelperText } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
@@ -7,8 +8,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { createTeam } from '../../api/team.api';
 
-// React Quill
-import ReactQuill from 'react-quill';
+// React Quill (lazy-loaded)
+import Loader from '../../components/Loader';
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false, loading: () => <Loader /> });
 import 'react-quill/dist/quill.snow.css';
 
 export default function AddTeam() {

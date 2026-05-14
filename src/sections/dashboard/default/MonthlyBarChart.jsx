@@ -1,7 +1,9 @@
 // material-ui
+import dynamic from 'next/dynamic';
 import { useTheme } from '@mui/material/styles';
 
-import { BarChart } from '@mui/x-charts/BarChart';
+import Loader from 'components/Loader';
+const BarChart = dynamic(() => import('@mui/x-charts/BarChart').then(m => m.BarChart), { ssr: false, loading: () => <Loader /> });
 
 const data = [80, 95, 70, 42, 65, 55, 78];
 const xLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];

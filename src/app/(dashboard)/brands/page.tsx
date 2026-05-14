@@ -25,6 +25,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
+import { useBrands } from '@/api/hooks';
 
 interface Brand {
   _id: string;
@@ -36,30 +37,12 @@ interface Brand {
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/brands`;
 
 export default function BrandsPage() {
-  const [brands, setBrands] = React.useState<Brand[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const { brands: rawBrands, isLoading: loading, mutate: mutateBrands } = useBrands();
+  const brands = rawBrands as Brand[];
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({ logo: '' });
   const [saving, setSaving] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState<Brand | null>(null);
-
-  const fetchBrands = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_BASE}`);
-      if (res.data?.success) {
-        setBrands(res.data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching brands:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    fetchBrands();
-  }, [fetchBrands]);
 
   const handleOpenDialog = () => {
     setFormData({ logo: '' });
@@ -78,7 +61,7 @@ export default function BrandsPage() {
     try {
       await axios.post(`${API_BASE}`, formData);
       handleCloseDialog();
-      fetchBrands();
+      mutateBrands();
     } catch (error) {
       console.error('Error saving brand:', error);
     } finally {
@@ -92,7 +75,7 @@ export default function BrandsPage() {
     try {
       await axios.delete(`${API_BASE}/${deleteConfirm._id}`);
       setDeleteConfirm(null);
-      fetchBrands();
+      mutateBrands();
     } catch (error) {
       console.error('Error deleting brand:', error);
     }

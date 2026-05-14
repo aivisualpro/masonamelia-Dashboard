@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
 // material-ui
@@ -45,7 +46,7 @@ export default function Header() {
       {/* Left: Logo + Nav */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, md: 4 } }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo.png" alt="Mason Amelia" style={{ height: 36, width: 'auto' }} />
+          <Image src="/logo.png" alt="Mason Amelia" width={120} height={36} priority style={{ height: 36, width: 'auto' }} />
         </Link>
         
         {!downLG && (
@@ -95,3 +96,4 @@ export default function Header() {
     </AppBar>
   );
 }
+

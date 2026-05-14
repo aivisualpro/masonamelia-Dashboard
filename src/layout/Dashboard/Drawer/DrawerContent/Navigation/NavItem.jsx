@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import React, { useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -14,7 +15,7 @@ import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 
 // ==============================|| NAVIGATION - LIST ITEM ||============================== //
 
-export default function NavItem({ item, level, isParents = false, setSelectedID }) {
+function NavItem({ item, level, isParents = false, setSelectedID }) {
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
 
@@ -25,13 +26,13 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
     itemTarget = '_blank';
   }
 
-  const itemHandler = () => {
+  const itemHandler = useCallback(() => {
     if (downLG) handlerDrawerOpen(false);
 
     if (isParents && setSelectedID) {
       setSelectedID(item.id);
     }
-  };
+  }, [downLG, isParents, setSelectedID, item.id]);
 
   const Icon = item.icon;
   const itemIcon = item.icon ? (
@@ -127,3 +128,5 @@ NavItem.propTypes = {
   isParents: PropTypes.bool,
   setSelectedID: PropTypes.oneOfType([PropTypes.func, PropTypes.any])
 };
+
+export default React.memo(NavItem);

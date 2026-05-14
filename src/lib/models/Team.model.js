@@ -46,4 +46,7 @@ const teamSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// ─── Indexes ──────────────────────────────────────
+teamSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.models.Team || mongoose.model("Team", teamSchema);

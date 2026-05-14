@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import dynamic from 'next/dynamic';
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
@@ -22,7 +23,8 @@ import { Formik } from 'formik';
 
 // project imports
 import IconButton from 'components/@extended/IconButton';
-import AnimateButton from 'components/@extended/AnimateButton';
+import Loader from 'components/Loader';
+const AnimateButton = dynamic(() => import('components/@extended/AnimateButton'), { ssr: false, loading: () => <Loader /> });
 
 // assets
 import EyeOutlined from '@ant-design/icons/EyeOutlined';

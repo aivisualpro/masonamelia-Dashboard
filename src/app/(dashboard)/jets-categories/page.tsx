@@ -3,15 +3,6 @@
 import * as React from 'react';
 import {
   Box,
-  Paper,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
   Dialog,
   DialogTitle,
@@ -20,12 +11,19 @@ import {
   TextField,
   Stack,
   Tooltip,
-  CircularProgress
+  CircularProgress,
+  Button,
+  Chip,
+  Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import { useTheme } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import FlightIcon from '@mui/icons-material/Flight';
 import axios from 'axios';
+import { useAircraftCategories, useAircraftCounts } from '@/api/hooks';
 
 interface Category {
   _id: string;
@@ -35,76 +33,62 @@ interface Category {
   updatedAt: string;
 }
 
+interface CategoryCount {
+  [categoryId: string]: number;
+}
+
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/aircraftCategories`;
 
 export default function JetsCategoriesPage() {
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const { categories: rawCategories, isLoading: loading, mutate: mutateCategories } = useAircraftCategories();
+  const categories = rawCategories as Category[];
+  const { categoryCounts: rawCounts, mutate: mutateCounts } = useAircraftCounts();
+  const categoryCounts = rawCounts as CategoryCount;
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
   const [formData, setFormData] = React.useState({ name: '', slug: '' });
   const [saving, setSaving] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState<Category | null>(null);
 
-  const fetchCategories = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_BASE}/lists`);
-      if (res.data?.success) {
-        setCategories(res.data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
-      setLoading(false);
-    }
+  // Inline editing state
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editForm, setEditForm] = React.useState({ name: '', slug: '' });
+
+  // Listen for "Add Category" button in the main header
+  React.useEffect(() => {
+    const handler = () => openAddDialog();
+    window.addEventListener('open-add-category', handler);
+    return () => window.removeEventListener('open-add-category', handler);
   }, []);
 
-  React.useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
-  const handleOpenDialog = (category?: Category) => {
-    if (category) {
-      setEditingCategory(category);
-      setFormData({ name: category.name, slug: category.slug });
-    } else {
-      setEditingCategory(null);
-      setFormData({ name: '', slug: '' });
-    }
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingCategory(null);
+  const openAddDialog = React.useCallback(() => {
     setFormData({ name: '', slug: '' });
-  };
+    setDialogOpen(true);
+  }, []);
+
+  const handleCloseDialog = React.useCallback(() => {
+    setDialogOpen(false);
+    setFormData({ name: '', slug: '' });
+  }, []);
 
   const generateSlug = (name: string) => {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    setFormData({
-      name,
-      slug: generateSlug(name)
-    });
-  };
+    setFormData({ name, slug: generateSlug(name) });
+  }, []);
 
   const handleSave = async () => {
     if (!formData.name.trim()) return;
-    
     setSaving(true);
     try {
-      if (editingCategory) {
-        await axios.put(`${API_BASE}/${editingCategory._id}`, formData);
-      } else {
-        await axios.post(`${API_BASE}`, formData);
-      }
+      await axios.post(`${API_BASE}`, formData);
       handleCloseDialog();
-      fetchCategories();
+      mutateCategories();
     } catch (error) {
       console.error('Error saving category:', error);
     } finally {
@@ -112,124 +96,314 @@ export default function JetsCategoriesPage() {
     }
   };
 
+  // Inline edit
+  const startEdit = (cat: Category) => {
+    setEditingId(cat._id);
+    setEditForm({ name: cat.name, slug: cat.slug });
+  };
+
+  const cancelEdit = React.useCallback(() => {
+    setEditingId(null);
+    setEditForm({ name: '', slug: '' });
+  }, []);
+
+  const saveEdit = async () => {
+    if (!editingId || !editForm.name.trim()) return;
+    try {
+      await axios.put(`${API_BASE}/${editingId}`, editForm);
+      setEditingId(null);
+      mutateCategories();
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
+  };
+
+  const handleEditNameChange = (val: string) => {
+    setEditForm({ name: val, slug: generateSlug(val) });
+  };
+
   const handleDelete = async () => {
     if (!deleteConfirm) return;
-    
     try {
       await axios.delete(`${API_BASE}/${deleteConfirm._id}`);
       setDeleteConfirm(null);
-      fetchCategories();
+      mutateCategories();
+      mutateCounts();
     } catch (error) {
       console.error('Error deleting category:', error);
     }
   };
 
   return (
-    <Box>
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-          <Typography variant="h5" fontWeight={600}>
-            Aircraft Categories
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-          >
-            Add Category
-          </Button>
-        </Stack>
-
+    <>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
         {loading ? (
-          <Box display="flex" justifyContent="center" py={4}>
-            <CircularProgress />
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : categories.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300, color: theme.palette.text.secondary, fontSize: 15 }}>
+            No categories found. Click &quot;Add Category&quot; to create one.
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Slug</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Created At</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {categories.map((cat, index) => (
-                  <TableRow key={cat._id} hover>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{cat.name}</TableCell>
-                    <TableCell>{cat.slug}</TableCell>
-                    <TableCell>{new Date(cat.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => handleOpenDialog(cat)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton size="small" color="error" onClick={() => setDeleteConfirm(cat)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {categories.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                      No categories found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(3, 1fr)',
+              lg: 'repeat(4, 1fr)',
+            },
+            gap: 2,
+          }}>
+            {categories.map((cat) => {
+              const count = categoryCounts[cat._id] || 0;
+              const isEditing = editingId === cat._id;
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingCategory ? 'Edit Category' : 'Add Category'}</DialogTitle>
+              return (
+                <Box
+                  key={cat._id}
+                  sx={{
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                    p: 2.5,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                    '&:hover': {
+                      borderColor: isEditing ? theme.palette.primary.main : theme.palette.text.disabled,
+                      boxShadow: isEditing ? 'none' : `0 2px 8px ${isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.06)'}`,
+                    },
+                    ...(isEditing && {
+                      borderColor: theme.palette.primary.main,
+                    }),
+                  }}
+                >
+                  {/* Top row: Jet count chip */}
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Chip
+                      icon={<FlightIcon sx={{ fontSize: 14 }} />}
+                      label={`${count} jet${count !== 1 ? 's' : ''}`}
+                      size="small"
+                      sx={{
+                        height: 26,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        backgroundColor: count > 0
+                          ? (isDark ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.1)')
+                          : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                        color: count > 0 ? '#22c55e' : theme.palette.text.disabled,
+                        border: `1px solid ${count > 0 ? 'rgba(34,197,94,0.3)' : theme.palette.divider}`,
+                        '& .MuiChip-icon': {
+                          color: 'inherit',
+                        },
+                      }}
+                    />
+                  </Box>
+
+                  {/* Content */}
+                  {isEditing ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      <TextField
+                        value={editForm.name}
+                        onChange={(e) => handleEditNameChange(e.target.value)}
+                        size="small"
+                        fullWidth
+                        autoFocus
+                        label="Name"
+                        InputLabelProps={{ shrink: true }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                      />
+                      <TextField
+                        value={editForm.slug}
+                        onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })}
+                        size="small"
+                        fullWidth
+                        label="Slug"
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<CheckIcon />}
+                          onClick={saveEdit}
+                          sx={{ textTransform: 'none', fontSize: 12, flex: 1 }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<CloseIcon />}
+                          onClick={cancelEdit}
+                          sx={{ textTransform: 'none', fontSize: 12 }}
+                        >
+                          Cancel
+                        </Button>
+                      </Stack>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box>
+                        <Typography sx={{ fontSize: 22, fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.3 }}>
+                          {cat.name}
+                        </Typography>
+                        <Typography sx={{ fontSize: 14, color: theme.palette.text.secondary, mt: 0.5 }}>
+                          {cat.slug}
+                        </Typography>
+                      </Box>
+
+                      {/* Actions */}
+                      <Box sx={{ display: 'flex', gap: 0.75, mt: 'auto', pt: 1 }}>
+                        <Tooltip title="Edit">
+                          <IconButton
+                            size="small"
+                            onClick={() => startEdit(cat)}
+                            sx={{
+                              border: `1px solid ${theme.palette.divider}`,
+                              borderRadius: 1,
+                              width: 30,
+                              height: 30,
+                            }}
+                          >
+                            <EditIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                        {count === 0 && (
+                          <Tooltip title="Delete">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => setDeleteConfirm(cat)}
+                              sx={{
+                                border: `1px solid ${isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)'}`,
+                                borderRadius: 1,
+                                width: 30,
+                                height: 30,
+                              }}
+                            >
+                              <DeleteIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+
+      {/* Add Category Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper,
+            backgroundImage: 'none',
+            borderRadius: 3,
+            border: `1px solid ${theme.palette.divider}`,
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontSize: 22, fontWeight: 700, color: theme.palette.text.primary, pb: 0.5 }}>
+          Add Category
+        </DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2.5} sx={{ mt: 2 }}>
             <TextField
               label="Category Name"
               value={formData.name}
               onChange={handleNameChange}
               fullWidth
               autoFocus
+              placeholder="e.g. Light Jets"
+              InputLabelProps={{ shrink: true, sx: { fontSize: 16, color: theme.palette.text.secondary } }}
+              InputProps={{ sx: { fontSize: 15, color: theme.palette.text.primary } }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: theme.palette.divider },
+                  '&:hover fieldset': { borderColor: theme.palette.text.disabled },
+                },
+                '& .MuiInputBase-input::placeholder': { color: theme.palette.text.disabled, opacity: 1 },
+              }}
             />
             <TextField
               label="Slug"
               value={formData.slug}
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               fullWidth
-              helperText="Auto-generated from name"
+              placeholder="e.g. light-jets"
+              InputLabelProps={{ shrink: true, sx: { fontSize: 16, color: theme.palette.text.secondary } }}
+              InputProps={{ sx: { fontSize: 15, color: theme.palette.text.primary } }}
+              helperText="Auto-generated from name. Used in URLs."
+              FormHelperTextProps={{ sx: { color: theme.palette.text.disabled } }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': { borderColor: theme.palette.divider },
+                  '&:hover fieldset': { borderColor: theme.palette.text.disabled },
+                },
+                '& .MuiInputBase-input::placeholder': { color: theme.palette.text.disabled, opacity: 1 },
+              }}
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={saving || !formData.name.trim()}>
-            {saving ? 'Saving...' : 'Save'}
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={handleCloseDialog} disabled={saving} variant="outlined" sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: 14 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={saving || !formData.name.trim()}
+            sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 600, fontSize: 14 }}
+          >
+            {saving ? 'Saving...' : 'Create Category'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}>
-        <DialogTitle>Delete Category</DialogTitle>
+      <Dialog
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper,
+            backgroundImage: 'none',
+            borderRadius: 3,
+            border: `1px solid ${theme.palette.divider}`,
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontSize: 22, fontWeight: 700, color: theme.palette.text.primary }}>
+          Delete Category
+        </DialogTitle>
         <DialogContent>
-          Are you sure you want to delete &quot;{deleteConfirm?.name}&quot;? This action cannot be undone.
+          <Typography sx={{ color: theme.palette.text.secondary, fontSize: 15 }}>
+            Are you sure you want to delete &quot;{deleteConfirm?.name}&quot;? This action cannot be undone.
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">Delete</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setDeleteConfirm(null)} variant="outlined" sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: 14 }}>
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained" sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 600, fontSize: 14 }}>
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }

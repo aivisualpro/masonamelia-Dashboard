@@ -1,9 +1,23 @@
 import PropTypes from 'prop-types';
+import { useState, useEffect } from 'react';
 
-// third-party
-import { motion, useCycle } from 'framer-motion';
+// Lazy-load framer-motion to keep it out of the initial bundle
+function useDynamicMotion() {
+  const [fm, setFm] = useState(null);
+  useEffect(() => {
+    import('framer-motion').then(setFm);
+  }, []);
+  return fm;
+}
 
 export default function AnimateButton({ children, type = 'scale', direction = 'right', offset = 10, scale = { hover: 1.05, tap: 0.954 } }) {
+  const fm = useDynamicMotion();
+
+  // While framer-motion is loading, just render children plainly
+  if (!fm) return <>{children}</>;
+
+  const { motion, useCycle } = fm;
+
   let offset1;
   let offset2;
   switch (direction) {
@@ -20,7 +34,9 @@ export default function AnimateButton({ children, type = 'scale', direction = 'r
       break;
   }
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [x, cycleX] = useCycle(offset1, offset2);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [y, cycleY] = useCycle(offset1, offset2);
 
   switch (type) {
@@ -28,12 +44,7 @@ export default function AnimateButton({ children, type = 'scale', direction = 'r
       return (
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{
-            repeat: Infinity,
-            repeatType: 'loop',
-            duration: 2,
-            repeatDelay: 0
-          }}
+          transition={{ repeat: Infinity, repeatType: 'loop', duration: 2, repeatDelay: 0 }}
         >
           {children}
         </motion.div>
@@ -51,15 +62,9 @@ export default function AnimateButton({ children, type = 'scale', direction = 'r
           {children}
         </motion.div>
       );
-
     case 'scale':
     default:
-      if (typeof scale === 'number') {
-        scale = {
-          hover: scale,
-          tap: scale
-        };
-      }
+      if (typeof scale === 'number') scale = { hover: scale, tap: scale };
       return (
         <motion.div whileHover={{ scale: scale?.hover }} whileTap={{ scale: scale?.tap }}>
           {children}

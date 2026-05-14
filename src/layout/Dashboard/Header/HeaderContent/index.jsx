@@ -13,6 +13,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SaveIcon from '@mui/icons-material/Save';
 
 import { ThemeModeContext } from '@/themes/index';
 
@@ -41,7 +42,8 @@ export default function HeaderContent() {
   };
 
   // Route-specific action buttons
-   const showAddAircraft = pathname === '/jets';
+  const showAddAircraft = pathname === '/jets';
+  const showAddCategory = pathname === '/jets-categories';
   const showBack = pathname.startsWith('/jets/edit') || pathname.startsWith('/jets/add');
 
   return (
@@ -65,16 +67,80 @@ export default function HeaderContent() {
 
       {/* Route-specific: Add Aircraft only on /jets */}
       {showAddAircraft && (
-        <Link href="/jets/add" style={{ textDecoration: 'none' }}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            sx={BTN_SX}
-          >
-            Add Aircraft
-          </Button>
-        </Link>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          sx={BTN_SX}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-add-aircraft'))}
+        >
+          Add Aircraft
+        </Button>
+      )}
+
+      {/* Route-specific: Add Category only on /jets-categories */}
+      {showAddCategory && (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          sx={BTN_SX}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-add-category'))}
+        >
+          Add Category
+        </Button>
+      )}
+
+      {/* Route-specific: Add Brand only on /brands */}
+      {pathname === '/brands' && (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          sx={BTN_SX}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-add-brand'))}
+        >
+          Add Brand
+        </Button>
+      )}
+
+      {/* Route-specific: Add Member only on /teams */}
+      {pathname === '/teams' && (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          sx={BTN_SX}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-add-member'))}
+        >
+          Add Member
+        </Button>
+      )}
+
+      {/* Route-specific: Add Testimonial only on /testimonials */}
+      {pathname === '/testimonials' && (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          sx={BTN_SX}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-add-testimonial'))}
+        >
+          Add Testimonial
+        </Button>
+      )}
+
+      {/* Route-specific: Save Changes only on /contact */}
+      {pathname === '/contact' && (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<SaveIcon />}
+          sx={BTN_SX}
+          onClick={() => window.dispatchEvent(new CustomEvent('save-contact'))}
+        >
+          Save Changes
+        </Button>
       )}
 
       {/* Theme toggle — always visible */}

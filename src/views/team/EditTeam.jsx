@@ -1,4 +1,5 @@
 // src/pages/team/EditTeam.jsx
+import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from 'react';
 import {
   Box, Grid, TextField, Button, Typography, LinearProgress, Snackbar, Alert, Paper,
@@ -9,8 +10,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { updateTeam, getTeamById } from '../../api/team.api';
 
-// ── React Quill
-import ReactQuill from 'react-quill';
+// ── React Quill (lazy-loaded)
+import Loader from '../../components/Loader';
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false, loading: () => <Loader /> });
 import 'react-quill/dist/quill.snow.css';
 
 const tf = { variant: 'outlined', InputLabelProps: { shrink: true } };

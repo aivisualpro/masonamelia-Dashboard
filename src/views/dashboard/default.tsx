@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import { optimizeCloudinaryUrl } from '@/utils/cloudinary';
 
 const numFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 const curFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
@@ -20,6 +22,56 @@ function KpiCard({ label, value, sub, accent }: { label: string; value: string; 
       <span style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: theme.palette.text.secondary }}>{label}</span>
       <span style={{ fontSize: 26, fontWeight: 700, color: accent || theme.palette.text.primary, lineHeight: 1.15 }}>{value}</span>
       {sub && <span style={{ fontSize: 12, color: theme.palette.text.secondary, marginTop: 2 }}>{sub}</span>}
+    </Box>
+  );
+}
+
+// ── Animated Counter ────────────────────────────────────────────
+function AnimatedCounter({ target, duration = 1200 }: { target: number; duration?: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (target <= 0) { setCount(0); return; }
+    let start = 0;
+    const startTime = performance.now();
+
+    function step(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * target);
+      setCount(current);
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }, [target, duration]);
+
+  return <>{count.toLocaleString()}</>;
+}
+
+// ── Website Visitors Card ───────────────────────────────────────
+function WebsiteVisitorCard({ kpis }: { kpis: any }) {
+  const theme = useTheme();
+  const { totalWebsiteVisits = 0, visitsLast30 = 0, visitsPrev30 = 0 } = kpis;
+
+  const isUp = visitsLast30 >= visitsPrev30;
+  const arrow = visitsLast30 === visitsPrev30 ? null : isUp ? '▲' : '▼';
+  const arrowColor = isUp ? '#22c55e' : '#ef4444';
+
+  return (
+    <Box sx={{
+      p: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: 2,
+      backgroundColor: theme.palette.background.paper,
+      display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0,
+    }}>
+      <span style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: theme.palette.text.secondary }}>Website Visitors</span>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <span style={{ fontSize: 26, fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.15 }}>
+          <AnimatedCounter target={totalWebsiteVisits} />
+        </span>
+        {arrow && <span style={{ fontSize: 18, color: arrowColor, lineHeight: 1 }}>{arrow}</span>}
+      </Box>
     </Box>
   );
 }
@@ -107,7 +159,7 @@ function RecentRow({ item }: { item: any }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.25, borderBottom: `1px solid ${theme.palette.divider}`, '&:last-child': { borderBottom: 'none' } }}>
       <Box sx={{ width: 44, height: 32, borderRadius: 1, overflow: 'hidden', flexShrink: 0, backgroundColor: theme.palette.action.hover }}>
-        {item.featuredImage && <img src={item.featuredImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />}
+        {item.featuredImage && <Image src={optimizeCloudinaryUrl(item.featuredImage)} alt={item.title || 'Aircraft'} width={44} height={32} sizes="44px" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</Box>
@@ -201,13 +253,15 @@ function BusinessHealthCard({ kpis }: { kpis: any }) {
 }
 
 // ══════════════════════════════════════════════════════════════
-export default function DashboardDefault() {
+export default function DashboardDefault({ initialData }: { initialData?: any }) {
   const theme = useTheme();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(initialData || null);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Skip fetch if server-side data was provided
+    if (initialData) return;
     fetch('/api/analysis/lists')
       .then(r => r.json())
       .then(j => {
@@ -216,7 +270,7 @@ export default function DashboardDefault() {
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   if (loading) {
     return (
@@ -252,8 +306,8 @@ export default function DashboardDefault() {
         <KpiCard label="Sale Pending" value={numFmt.format(kpis.salePending)} sub="In progress" accent="#a855f7" />
         <KpiCard label="Inventory Value" value={kpis.totalValue > 0 ? curFmt.format(kpis.totalValue) : '—'} sub="For-sale listings" />
         <KpiCard label="Avg. List Price" value={kpis.avgPrice > 0 ? curFmt.format(kpis.avgPrice) : '—'} sub="For-sale avg." />
-        <KpiCard label="Avg. Sold Price" value={kpis.avgSoldPrice > 0 ? curFmt.format(kpis.avgSoldPrice) : '—'} sub="Historical avg." />
         <KpiCard label="Team Members" value={numFmt.format(kpis.totalTeam)} sub="Active agents" />
+        <WebsiteVisitorCard kpis={kpis} />
       </Box>
 
       {/* ── Row 2: Monthly chart + Status ── */}

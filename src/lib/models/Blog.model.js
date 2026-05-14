@@ -13,5 +13,7 @@ const BlogSchema = new mongoose.Schema(
 
 // Text index for search (title + content)
 BlogSchema.index({ title: 'text' });
+BlogSchema.index({ createdAt: -1 });
+BlogSchema.index({ category: 1 });
 
 module.exports = mongoose.models.Blog || mongoose.model('Blog', BlogSchema);

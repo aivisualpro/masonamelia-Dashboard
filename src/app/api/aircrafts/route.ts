@@ -6,7 +6,7 @@ import '@/lib/models/AircraftCategory.model'; // Ensure schema registration
 export async function GET() {
   await dbConnect();
   try {
-    const aircrafts = await Aircraft.find().populate('category').sort({ createdAt: -1 });
+    const aircrafts = await Aircraft.find().populate('category').sort({ createdAt: -1 }).lean();
     return NextResponse.json({ success: true, data: aircrafts });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

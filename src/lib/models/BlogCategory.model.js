@@ -8,4 +8,7 @@ const BlogCategorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+BlogCategorySchema.index({ slug: 1 }, { unique: true, sparse: true });
+BlogCategorySchema.index({ createdAt: -1 });
+
 module.exports = mongoose.models.BlogCategory || mongoose.model('BlogCategory', BlogCategorySchema);

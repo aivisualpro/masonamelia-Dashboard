@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Paths that do not require authentication
-const publicPaths = ['/login', '/register', '/api/auth/login', '/api/auth/register'];
+const publicPaths = ['/login', '/register', '/api/auth/login', '/api/auth/register', '/api/brands/migrate', '/api/aircrafts/migrate', '/api/migrate-images'];
 
 // Paths that are static resources
 const isStaticAsset = (path: string) => {

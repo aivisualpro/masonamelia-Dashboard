@@ -14,16 +14,17 @@ export async function GET(request: NextRequest) {
     
     const skip = (page - 1) * pageSize;
     
-    // Get total count for pagination
-    const total = await Aircraft.countDocuments();
-    
-    // Get paginated aircrafts
-    const aircrafts = await Aircraft.find()
-      .select('title year price status category airframe engine engineTwo propeller propellerTwo location featuredImage images contactAgent createdAt')
-      .populate('category', 'name')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(pageSize);
+    // Run count + paginated query in parallel
+    const [total, aircrafts] = await Promise.all([
+      Aircraft.countDocuments(),
+      Aircraft.find()
+        .select('title year price status category airframe engine engineTwo propeller propellerTwo location featuredImage images contactAgent createdAt')
+        .populate('category', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+    ]);
     
     return NextResponse.json({ 
       success: true, 

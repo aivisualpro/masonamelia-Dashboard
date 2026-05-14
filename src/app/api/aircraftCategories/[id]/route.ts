@@ -9,7 +9,7 @@ export async function GET(
   await dbConnect();
   
   try {
-    const category = await AircraftCategory.findById(params.id);
+    const category = await AircraftCategory.findById(params.id).lean();
     
     if (!category) {
       return NextResponse.json(

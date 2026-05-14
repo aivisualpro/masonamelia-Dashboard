@@ -1,7 +1,10 @@
 // material-ui
+import dynamic from 'next/dynamic';
 import { useTheme } from '@mui/material/styles';
 
-import { chartsGridClasses, LineChart } from '@mui/x-charts';
+import { chartsGridClasses } from '@mui/x-charts';
+import Loader from 'components/Loader';
+const LineChart = dynamic(() => import('@mui/x-charts/LineChart').then(m => m.LineChart), { ssr: false, loading: () => <Loader /> });
 
 const data = [58, 115, 28, 83, 63, 75, 35];
 const labels = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

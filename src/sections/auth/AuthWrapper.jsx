@@ -3,6 +3,9 @@ import PropTypes from 'prop-types';
 // material-ui
 import Box from '@mui/material/Box';
 
+// next
+import Image from 'next/image';
+
 // project imports
 import AuthCard from './AuthCard';
 
@@ -58,11 +61,15 @@ export default function AuthWrapper({ children }) {
             }
           }}
         >
-          <img
+          <Image
             src="/assets/images/logo.png"
             alt="Mason Amelia"
+            width={220}
+            height={66}
+            priority
             style={{
               maxWidth: 220,
+              height: 'auto',
             }}
           />
         </Box>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 
 // material-ui
 import { alpha, useTheme } from '@mui/material/styles';
@@ -9,7 +10,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
-import { BarChart } from '@mui/x-charts/BarChart';
+import Loader from 'components/Loader';
+const BarChart = dynamic(() => import('@mui/x-charts/BarChart').then(m => m.BarChart), { ssr: false, loading: () => <Loader /> });
 
 // project imports
 import MainCard from 'components/MainCard';

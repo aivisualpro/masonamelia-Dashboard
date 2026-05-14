@@ -1,11 +1,13 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Box, Grid, TextField, MenuItem, Button, Typography, LinearProgress, Snackbar, Alert, Paper } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import ReactQuill from 'react-quill';
+import Loader from '../../components/Loader';
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false, loading: () => <Loader /> });
 import 'react-quill/dist/quill.snow.css';
 
 import { getBlogById, updateBlog } from '../../api/blog.api';

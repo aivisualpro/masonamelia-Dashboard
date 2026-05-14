@@ -16,14 +16,14 @@ import componentsOverride from './overrides';
 // ==============================|| THEME MODE CONTEXT ||============================== //
 
 export const ThemeModeContext = createContext({
-  mode: 'light',
+  mode: 'dark',
   toggleMode: () => {}
 });
 
 // ==============================|| DEFAULT THEME - MAIN ||============================== //
 
 export default function ThemeCustomization({ children }) {
-  const [mode, setMode] = useState('light');
+  const [mode, setMode] = useState('dark');
 
   useEffect(() => {
     const savedMode = localStorage.getItem('theme_mode');
@@ -42,7 +42,7 @@ export default function ThemeCustomization({ children }) {
 
   const theme = Palette(mode, 'default');
 
-  const themeTypography = Typography(`'Public Sans', sans-serif`);
+  const themeTypography = Typography(`var(--font-public-sans), 'Public Sans', sans-serif`);
   const themeCustomShadows = useMemo(() => CustomShadows(theme), [theme]);
 
   const themeOptions = useMemo(

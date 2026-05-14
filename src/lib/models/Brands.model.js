@@ -7,4 +7,7 @@ const brandSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+// ─── Indexes ──────────────────────────────────────
+brandSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.models.Brand || mongoose.model("Brand", brandSchema);

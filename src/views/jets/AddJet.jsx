@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Box,
   Grid,
@@ -17,7 +18,8 @@ import {
 } from '@mui/material';
 import { Delete as DeleteIcon, Upload as UploadIcon } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
-import ReactQuill from 'react-quill';
+import Loader from '../../components/Loader';
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false, loading: () => <Loader /> });
 import 'react-quill/dist/quill.snow.css';
 import SendIcon from '@mui/icons-material/Send';
 import { useNavigate } from 'react-router-dom';

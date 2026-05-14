@@ -7,7 +7,7 @@ export async function GET() {
   await dbConnect();
   
   try {
-    const reviews = await Review.find().sort({ createdAt: -1 });
+    const reviews = await Review.find().sort({ createdAt: -1 }).lean();
     return NextResponse.json({ success: true, data: reviews });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

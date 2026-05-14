@@ -1,3 +1,5 @@
+'use client';
+
 import ViewJets from '@/views/jets/ViewJets';
 
 export default function JetsPage() {

@@ -44,4 +44,11 @@ const aircraftSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ─── Indexes for query performance ──────────────────────────────────────
+aircraftSchema.index({ createdAt: -1 });               // All list endpoints sort by createdAt desc
+aircraftSchema.index({ status: 1 });                    // Status filter + analytics countDocuments
+aircraftSchema.index({ status: 1, price: 1 });          // Analytics: inventory value aggregation
+aircraftSchema.index({ category: 1 });                  // Category lookups & aggregation
+aircraftSchema.index({ createdAt: -1, status: 1 });     // Combined sort + filter
+
 module.exports = mongoose.models.Aircraft || mongoose.model("Aircraft", aircraftSchema);

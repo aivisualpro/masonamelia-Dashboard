@@ -7,7 +7,7 @@ export async function GET() {
   await dbConnect();
   
   try {
-    const categories = await AircraftCategory.find().sort({ name: 1 });
+    const categories = await AircraftCategory.find().sort({ name: 1 }).lean();
     return NextResponse.json({ success: true, data: categories });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

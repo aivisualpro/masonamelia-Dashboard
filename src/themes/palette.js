@@ -58,6 +58,23 @@ export default function Palette(mode, presetColor) {
         white: '#fff'
       },
       ...paletteColor,
+      primary: mode === 'dark'
+        ? {
+            lighter: 'rgba(255,255,255,0.08)',
+            light: 'rgba(255,255,255,0.6)',
+            main: '#ffffff',
+            dark: '#e0e0e0',
+            darker: '#bdbdbd',
+            contrastText: '#091413',
+          }
+        : {
+            lighter: 'rgba(0,0,0,0.04)',
+            light: '#434343',
+            main: '#141414',
+            dark: '#000000',
+            darker: '#000000',
+            contrastText: '#ffffff',
+          },
       text: {
         primary: mode === 'dark' ? 'rgba(255, 255, 255, 0.87)' : paletteColor.grey[700],
         secondary: mode === 'dark' ? 'rgba(255, 255, 255, 0.6)' : paletteColor.grey[500],
@@ -68,8 +85,8 @@ export default function Palette(mode, presetColor) {
       },
       divider: mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : paletteColor.grey[200],
       background: {
-        paper: mode === 'dark' ? '#2a3350' : paletteColor.grey[0],
-        default: mode === 'dark' ? '#202940' : paletteColor.grey.A50
+        paper: mode === 'dark' ? '#112220' : paletteColor.grey[0],
+        default: mode === 'dark' ? '#091413' : '#BFC9D1'
       }
     }
   });

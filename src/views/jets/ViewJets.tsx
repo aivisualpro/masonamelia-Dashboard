@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
+import { optimizeCloudinaryUrl } from '@/utils/cloudinary';
 import {
   Box,
   Button,
@@ -26,6 +28,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useRouter } from 'next/navigation';
 import { purple } from '@mui/material/colors';
+import AddAircraftModal from './AddAircraftModal';
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/aircrafts`;
 const BULK_DELETE_URL = `${API_BASE}/bulkDelete`;
@@ -240,9 +243,12 @@ function ImageCarouselDialog({ carousel, onClose }: { carousel: CarouselState; o
               <ChevronLeftIcon fontSize="large" />
             </IconButton>
           )}
-          <img
-            src={carousel.images[idx]}
+          <Image
+            src={optimizeCloudinaryUrl(carousel.images[idx])}
             alt={`${carousel.title} - ${idx + 1}`}
+            width={1200}
+            height={800}
+            sizes="80vw"
             style={{ maxWidth: '80vw', maxHeight: '70vh', objectFit: 'contain', borderRadius: 8 }}
           />
           {carousel.images.length > 1 && (
@@ -275,7 +281,7 @@ function ImageCarouselDialog({ carousel, onClose }: { carousel: CarouselState; o
                   '&:hover': { opacity: 1 },
                 }}
               >
-                <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <Image src={optimizeCloudinaryUrl(img)} alt="" width={56} height={40} sizes="56px" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </Box>
             ))}
           </Box>
@@ -286,10 +292,10 @@ function ImageCarouselDialog({ carousel, onClose }: { carousel: CarouselState; o
 }
 
 /* ============== MAIN TABLE ============== */
-export default function AircraftTable() {
+export default function AircraftTable({ initialData }: { initialData?: AircraftDoc[] }) {
   const theme = useTheme();
-  const [loading, setLoading] = React.useState(true);
-  const [aircrafts, setAircrafts] = React.useState<AircraftDoc[]>([]);
+  const [loading, setLoading] = React.useState(!initialData?.length);
+  const [aircrafts, setAircrafts] = React.useState<AircraftDoc[]>(initialData || []);
   const [confirm, setConfirm] = React.useState<ConfirmState>({ open: false, mode: null, ids: [], title: '' });
   const [deleting, setDeleting] = React.useState(false);
   const [carousel, setCarousel] = React.useState<CarouselState>({ open: false, images: [], currentIndex: 0, title: '' });
@@ -298,6 +304,14 @@ export default function AircraftTable() {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   const router = useRouter();
+  const [addOpen, setAddOpen] = React.useState(false);
+
+  // Listen for header button event
+  React.useEffect(() => {
+    const handler = () => setAddOpen(true);
+    window.addEventListener('open-add-aircraft', handler);
+    return () => window.removeEventListener('open-add-aircraft', handler);
+  }, []);
 
   const fetchRows = React.useCallback(async () => {
     setLoading(true);
@@ -312,7 +326,11 @@ export default function AircraftTable() {
     }
   }, []);
 
-  React.useEffect(() => { fetchRows(); }, [fetchRows]);
+  React.useEffect(() => {
+    // Skip initial fetch if server-side data was provided
+    if (initialData?.length) return;
+    fetchRows();
+  }, [fetchRows, initialData]);
 
   const handleStatusUpdated = React.useCallback((id: string, newStatus: string) => {
     setAircrafts((prev) =>
@@ -372,8 +390,8 @@ export default function AircraftTable() {
     return () => observer.disconnect();
   }, [hasMore, loading, rows.length]);
 
-  const openConfirmSingle = (row: AircraftRow) => setConfirm({ open: true, mode: 'single', ids: [row.id], title: row.title || '' });
-  const closeConfirm = () => setConfirm((c) => ({ ...c, open: false }));
+  const openConfirmSingle = React.useCallback((row: AircraftRow) => setConfirm({ open: true, mode: 'single', ids: [row.id], title: row.title || '' }), []);
+  const closeConfirm = React.useCallback(() => setConfirm((c) => ({ ...c, open: false })), []);
 
   const handleConfirmDelete = async () => {
     if (!confirm.ids.length) return;
@@ -397,11 +415,13 @@ export default function AircraftTable() {
     }
   };
 
-  const openCarousel = (row: AircraftRow) => {
+  const openCarousel = React.useCallback((row: AircraftRow) => {
     const imgs = row.images.length > 0 ? row.images : (row.image ? [row.image] : []);
     if (imgs.length === 0) return;
     setCarousel({ open: true, images: imgs, currentIndex: 0, title: row.title });
-  };
+  }, []);
+
+  const closeCarousel = React.useCallback(() => setCarousel((c) => ({ ...c, open: false })), []);
 
   const isDark = theme.palette.mode === 'dark';
 
@@ -484,9 +504,12 @@ export default function AircraftTable() {
                     >{row.title}</td>
                     <td style={{ ...tdStyle, padding: '6px 16px', width: 88 }}>
                       {row.image ? (
-                        <img
-                          src={row.image}
+                        <Image
+                          src={optimizeCloudinaryUrl(row.image)}
                           alt={row.title}
+                          width={64}
+                          height={40}
+                          sizes="64px"
                           onClick={() => openCarousel(row)}
                           style={{
                             height: 40,
@@ -496,9 +519,6 @@ export default function AircraftTable() {
                             cursor: 'pointer',
                             transition: 'opacity 0.15s ease',
                           }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.8'; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-                          loading="lazy"
                         />
                       ) : (
                         <span style={{ color: theme.palette.text.disabled, fontSize: 12 }}>—</span>
@@ -576,7 +596,10 @@ export default function AircraftTable() {
       </Dialog>
 
       {/* Image Carousel Dialog */}
-      <ImageCarouselDialog carousel={carousel} onClose={() => setCarousel((c) => ({ ...c, open: false }))} />
+      <ImageCarouselDialog carousel={carousel} onClose={closeCarousel} />
+
+      {/* Add Aircraft Modal */}
+      <AddAircraftModal open={addOpen} onClose={() => setAddOpen(false)} onCreated={fetchRows} />
     </>
   );
 }

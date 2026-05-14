@@ -9,7 +9,7 @@ export async function GET(
   await dbConnect();
   
   try {
-    const team = await Team.findById(params.id);
+    const team = await Team.findById(params.id).lean();
     
     if (!team) {
       return NextResponse.json(

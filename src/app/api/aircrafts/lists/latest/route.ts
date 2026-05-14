@@ -11,7 +11,8 @@ export async function GET() {
     const aircrafts = await Aircraft.find()
       .populate('category')
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(10)
+      .lean();
     return NextResponse.json({ success: true, data: aircrafts });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

@@ -1,7 +1,8 @@
 // project imports
-
+import dynamic from 'next/dynamic';
 import Navigation from './Navigation';
-import SimpleBar from 'components/third-party/SimpleBar';
+import Loader from 'components/Loader';
+const SimpleBar = dynamic(() => import('components/third-party/SimpleBar'), { ssr: false, loading: () => <Loader /> });
 import { useGetMenuMaster } from 'api/menu';
 
 // ==============================|| DRAWER CONTENT ||============================== //

@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
 // material-ui
@@ -7,7 +8,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
-import { LineChart } from '@mui/x-charts/LineChart';
+import Loader from 'components/Loader';
+const LineChart = dynamic(() => import('@mui/x-charts/LineChart').then(m => m.LineChart), { ssr: false, loading: () => <Loader /> });
 
 // Sample data
 const monthlyLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

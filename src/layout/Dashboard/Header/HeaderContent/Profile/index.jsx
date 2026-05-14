@@ -24,6 +24,7 @@ import IconButton from 'components/@extended/IconButton';
 // assets
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 const masonAmeliaIcon = "/assets/images/logoIcon.avif";
 
 // tab panel wrapper
@@ -86,7 +87,7 @@ export default function Profile() {
         onClick={handleToggle}
       >
         <Stack direction="row" sx={{ gap: 1.25, alignItems: 'center', p: 0.5 }}>
-          <img src={masonAmeliaIcon} style={{ width: "30px", height: "20px" }} alt="" />
+          <Image src={masonAmeliaIcon} width={30} height={20} style={{ width: "30px", height: "20px" }} alt="Mason Amelia" priority />
           <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
             Mason Amelia
           </Typography>

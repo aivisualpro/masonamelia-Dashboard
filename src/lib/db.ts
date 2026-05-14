@@ -28,6 +28,8 @@ async function  dbConnect() {
     const opts = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000, // Fail after 5s if DB is unreachable
+      maxPoolSize: 10, // Limit pool for serverless
+      autoIndex: process.env.NODE_ENV !== 'production', // Don't auto-build indexes in prod
     };
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {

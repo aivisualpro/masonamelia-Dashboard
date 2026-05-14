@@ -1,14 +1,5 @@
-const mongoose = require("mongoose");
+// Legacy compat wrapper — delegates to the cached connection in /lib/db.ts
+// Kept for any old require('config/db') paths that may exist.
+const dbConnect = require('../db').default || require('../db');
 
-const dbConnection = async () => {
-  try {
-    const connect = await mongoose.connect(process.env.MONGO_URL);
-    console.log("Mongo Db Connection successfully");
-  } catch (error) {
-    console.log("error mongo db connection == >", error);
-  }
-};
-
-module.exports = {
-  dbConnection
-};
+module.exports = { dbConnection: dbConnect };

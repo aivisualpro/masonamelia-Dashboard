@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 // material-ui
@@ -20,7 +21,8 @@ import { Formik } from 'formik';
 
 // project imports
 import IconButton from 'components/@extended/IconButton';
-import AnimateButton from 'components/@extended/AnimateButton';
+import Loader from 'components/Loader';
+const AnimateButton = dynamic(() => import('components/@extended/AnimateButton'), { ssr: false, loading: () => <Loader /> });
 
 import { strengthColor, strengthIndicator } from 'utils/password-strength';
 

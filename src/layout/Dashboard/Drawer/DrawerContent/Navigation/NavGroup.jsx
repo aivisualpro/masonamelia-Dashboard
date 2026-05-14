@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 // material-ui
 import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
@@ -8,13 +9,13 @@ import Box from '@mui/material/Box';
 import NavItem from './NavItem';
 import { useGetMenuMaster } from 'api/menu';
 
-export default function NavGroup({ item }) {
+function NavGroup({ item }) {
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
 
 
 
-  const navCollapse = item.children?.map((menuItem) => {
+  const navCollapse = useMemo(() => item.children?.map((menuItem) => {
     switch (menuItem.type) {
       case 'collapse':
         return (
@@ -31,7 +32,7 @@ export default function NavGroup({ item }) {
           </Typography>
         );
     }
-  });
+  }), [item.children]);
 
   return (
     <List
@@ -54,3 +55,5 @@ export default function NavGroup({ item }) {
 }
 
 NavGroup.propTypes = { item: PropTypes.object };
+
+export default React.memo(NavGroup);

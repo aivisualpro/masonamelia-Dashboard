@@ -10,7 +10,7 @@ export async function GET(
   await dbConnect();
   
   try {
-    const aircraft = await Aircraft.findById(params.id).populate('category');
+    const aircraft = await Aircraft.findById(params.id).populate('category').lean();
     
     if (!aircraft) {
       return NextResponse.json(

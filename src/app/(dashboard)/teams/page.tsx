@@ -3,8 +3,6 @@
 import * as React from 'react';
 import {
   Box,
-  Typography,
-  Button,
   IconButton,
   Dialog,
   DialogTitle,
@@ -12,26 +10,25 @@ import {
   DialogActions,
   Stack,
   TextField,
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  CardActions,
   CircularProgress,
-  Divider,
-  Chip
+  Button,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import { useTheme } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import EmailIcon from '@mui/icons-material/Email';
-import PhoneIcon from '@mui/icons-material/Phone';
-import BusinessIcon from '@mui/icons-material/Business';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import UploadIcon from '@mui/icons-material/Upload';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import axios from 'axios';
+import Image from 'next/image';
+import { useTeams } from '@/api/hooks';
+import { optimizeCloudinaryUrl } from '@/utils/cloudinary';
 
 interface TeamMember {
   _id: string;
@@ -52,93 +49,83 @@ interface TeamMember {
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/teams`;
 
 const initialFormState = {
-  name: '',
-  profile_picture: '',
-  team_member_picture: '',
-  description: '',
-  designation: '',
-  phone: '',
-  email: '',
-  address: '',
-  facebook: '',
-  instagram: '',
-  linkedin: '',
-  youtube: ''
+  name: '', profile_picture: '', team_member_picture: '', description: '',
+  designation: '', phone: '', email: '', address: '',
+  facebook: '', instagram: '', linkedin: '', youtube: '',
 };
 
+// ── TextField helper ────────────────────────────────────────────
+const fieldSx = (theme: any) => ({
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': { borderColor: theme.palette.divider },
+    '&:hover fieldset': { borderColor: theme.palette.text.disabled },
+  },
+  '& .MuiInputBase-input::placeholder': { color: theme.palette.text.disabled, opacity: 1 },
+});
+
 export default function TeamsPage() {
-  const [members, setMembers] = React.useState<TeamMember[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const { members: rawMembers, isLoading: loading, mutate: mutateMembers } = useTeams();
+  const members = rawMembers as TeamMember[];
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [formData, setFormData] = React.useState(initialFormState);
-  const [editingId, setEditingId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState<TeamMember | null>(null);
 
-  const fetchMembers = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_BASE}`);
-      if (res.data?.success) {
-        setMembers(res.data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching team members:', error);
-    } finally {
-      setLoading(false);
-    }
+  // Inline edit
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editForm, setEditForm] = React.useState(initialFormState);
+  const editPicRef = React.useRef<HTMLInputElement>(null);
+  const [editPicFile, setEditPicFile] = React.useState<File | null>(null);
+  const [expandedDesc, setExpandedDesc] = React.useState<Record<string, boolean>>({});
+
+  // Add dialog upload
+  const addPicRef = React.useRef<HTMLInputElement>(null);
+  const [addPicFile, setAddPicFile] = React.useState<File | null>(null);
+
+  // Listen for header "Add Member" button
+  React.useEffect(() => {
+    const handler = () => openAddDialog();
+    window.addEventListener('open-add-member', handler);
+    return () => window.removeEventListener('open-add-member', handler);
   }, []);
 
-  React.useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+  // ── Add Dialog ────────────────────────────────────────────────
+  const openAddDialog = React.useCallback(() => { setFormData(initialFormState); setAddPicFile(null); setDialogOpen(true); }, []);
+  const closeAddDialog = React.useCallback(() => { setDialogOpen(false); setFormData(initialFormState); setAddPicFile(null); }, []);
+  const handleChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  }, []);
 
-  const handleOpenDialog = (member?: TeamMember) => {
-    if (member) {
-      setEditingId(member._id);
-      setFormData({
-        name: member.name,
-        profile_picture: member.profile_picture,
-        team_member_picture: member.team_member_picture || '',
-        description: member.description,
-        designation: member.designation,
-        phone: member.phone,
-        email: member.email,
-        address: member.address,
-        facebook: member.facebook || '',
-        instagram: member.instagram || '',
-        linkedin: member.linkedin || '',
-        youtube: member.youtube || ''
-      });
-    } else {
-      setEditingId(null);
-      setFormData(initialFormState);
-    }
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setFormData(initialFormState);
-    setEditingId(null);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const uploadImage = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append('logo', file); // reuse brands upload or a generic endpoint
+    // Upload via cloudinary directly using our brands API pattern
+    const arrayBuf = await file.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
+    const dataUrl = `data:${file.type};base64,${base64}`;
+    return dataUrl; // Fallback: store as URL; ideally use Cloudinary
   };
 
   const handleSave = async () => {
     if (!formData.name || !formData.email || !formData.designation) return;
-    
     setSaving(true);
     try {
-      if (editingId) {
-        await axios.put(`${API_BASE}/${editingId}`, formData);
-      } else {
-        await axios.post(`${API_BASE}`, formData);
+      let profilePic = formData.profile_picture;
+      if (addPicFile) {
+        // Upload via our upload endpoint
+        const fd = new FormData();
+        fd.append('file', addPicFile);
+        const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (uploadRes.data?.url) profilePic = uploadRes.data.url;
       }
-      handleCloseDialog();
-      fetchMembers();
+      await axios.post(`${API_BASE}`, { ...formData, profile_picture: profilePic });
+      closeAddDialog();
+      mutateMembers();
     } catch (error) {
       console.error('Error saving team member:', error);
     } finally {
@@ -146,306 +133,404 @@ export default function TeamsPage() {
     }
   };
 
+  // ── Inline Edit ───────────────────────────────────────────────
+  const startEdit = (m: TeamMember) => {
+    setEditingId(m._id);
+    setEditPicFile(null);
+    setEditForm({
+      name: m.name, profile_picture: m.profile_picture, team_member_picture: m.team_member_picture || '',
+      description: m.description, designation: m.designation, phone: m.phone, email: m.email,
+      address: m.address, facebook: m.facebook || '', instagram: m.instagram || '',
+      linkedin: m.linkedin || '', youtube: m.youtube || '',
+    });
+  };
+  const cancelEdit = React.useCallback(() => { setEditingId(null); setEditPicFile(null); }, []);
+  const handleEditChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  }, []);
+  const saveEdit = async () => {
+    if (!editingId) return;
+    try {
+      let profilePic = editForm.profile_picture;
+      if (editPicFile) {
+        const fd = new FormData();
+        fd.append('file', editPicFile);
+        const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (uploadRes.data?.url) profilePic = uploadRes.data.url;
+      }
+      await axios.put(`${API_BASE}/${editingId}`, { ...editForm, profile_picture: profilePic });
+      setEditingId(null);
+      setEditPicFile(null);
+      mutateMembers();
+    } catch (error) {
+      console.error('Error updating team member:', error);
+    }
+  };
+
+  // ── Delete ────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!deleteConfirm) return;
-    
     try {
       await axios.delete(`${API_BASE}/${deleteConfirm._id}`);
       setDeleteConfirm(null);
-      fetchMembers();
+      mutateMembers();
     } catch (error) {
       console.error('Error deleting member:', error);
     }
   };
 
-  return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={600}>
-          Team Members
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
+  // Social icon helper
+  const SocialIcon = ({ url, Icon, color, label }: { url?: string; Icon: any; color: string; label: string }) => {
+    if (!url) return null;
+    return (
+      <Tooltip title={url}>
+        <IconButton
+          size="small"
+          href={url}
+          target="_blank"
+          sx={{
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1,
+            width: 30,
+            height: 30,
+          }}
         >
-          Add Member
-        </Button>
-      </Stack>
+          <Icon sx={{ fontSize: 16, color }} />
+        </IconButton>
+      </Tooltip>
+    );
+  };
 
-      {loading ? (
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Grid container spacing={3}>
-          {members.map((member) => (
-            <Grid item xs={12} sm={6} md={4} key={member._id}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                <CardMedia
-                  component="img"
-                  height="260"
-                  image={member.profile_picture || 'https://placehold.co/400x300?text=No+Image'}
-                  alt={member.name}
-                  sx={{ objectFit: 'cover', objectPosition: 'top' }}
-                />
-                
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="h6" gutterBottom component="div" fontWeight="bold">
-                    {member.name}
-                  </Typography>
-                  <Chip 
-                    label={member.designation} 
-                    size="small" 
-                    color="primary" 
-                    variant="outlined" 
-                    sx={{ mb: 2 }}
-                  />
-                  
-                  <Stack spacing={1} sx={{ mb: 2 }}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <EmailIcon fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        {member.email}
-                      </Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <PhoneIcon fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary">
-                        {member.phone}
-                      </Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="start">
-                      <BusinessIcon fontSize="small" color="action" sx={{ mt: 0.3 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {member.address}
-                      </Typography>
-                    </Stack>
-                  </Stack>
+  return (
+    <>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : members.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300, color: theme.palette.text.secondary, fontSize: 15 }}>
+            No team members found. Click &quot;Add Member&quot; to create one.
+          </Box>
+        ) : (
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
+            gap: 2,
+          }}>
+            {members.map((m) => {
+              const isEditing = editingId === m._id;
 
-                  <Typography variant="body2" color="text.secondary" sx={{ 
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>
-                    {member.description}
-                  </Typography>
+              return (
+                <Box
+                  key={m._id}
+                  sx={{
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                    '&:hover': {
+                      borderColor: isEditing ? theme.palette.primary.main : theme.palette.text.disabled,
+                      boxShadow: isEditing ? 'none' : `0 2px 8px ${isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.06)'}`,
+                    },
+                    ...(isEditing && { borderColor: theme.palette.primary.main }),
+                  }}
+                >
+                  {/* Profile Picture */}
+                  <Box sx={{ p: 2, pb: 0 }}>
+                    <Box sx={{
+                      position: 'relative',
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      borderRadius: 1,
+                      border: `1px solid ${theme.palette.divider}`,
+                      overflow: 'hidden',
+                    }}>
+                      {isEditing && editPicFile ? (
+                        <img
+                          src={URL.createObjectURL(editPicFile)}
+                          alt={m.name}
+                          style={{ width: '100%', display: 'block', objectFit: 'contain', maxHeight: 260, borderRadius: 8 }}
+                        />
+                      ) : (
+                        <Image
+                          src={optimizeCloudinaryUrl(m.profile_picture || 'https://placehold.co/400x300?text=No+Image')}
+                          alt={m.name}
+                          width={400}
+                          height={300}
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          style={{ width: '100%', display: 'block', objectFit: 'contain', maxHeight: 260, borderRadius: 8 }}
+                          onError={(e: any) => { e.target.src = 'https://placehold.co/400x300?text=No+Image'; }}
+                        />
+                      )}
+                    {isEditing && (
+                      <Button
+                        component="label"
+                        variant="contained"
+                        size="small"
+                        startIcon={<UploadIcon />}
+                        sx={{
+                          position: 'absolute', bottom: 8, right: 8,
+                          textTransform: 'none', fontSize: 12, borderRadius: 1,
+                          backgroundColor: 'rgba(0,0,0,0.65)', '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
+                        }}
+                      >
+                        Change Photo
+                        <input ref={editPicRef} hidden accept="image/*" type="file"
+                          onChange={(e) => setEditPicFile(e.target.files?.[0] || null)} />
+                      </Button>
+                    )}
+                    </Box>
+                  </Box>
 
-                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                    {member.facebook && (
-                      <IconButton size="small" href={member.facebook} target="_blank">
-                        <FacebookIcon fontSize="small" color="primary" />
-                      </IconButton>
-                    )}
-                    {member.instagram && (
-                      <IconButton size="small" href={member.instagram} target="_blank">
-                        <InstagramIcon fontSize="small" sx={{ color: '#E1306C' }} />
-                      </IconButton>
-                    )}
-                    {member.linkedin && (
-                      <IconButton size="small" href={member.linkedin} target="_blank">
-                        <LinkedInIcon fontSize="small" color="primary" />
-                      </IconButton>
-                    )}
-                    {member.youtube && (
-                      <IconButton size="small" href={member.youtube} target="_blank">
-                        <YouTubeIcon fontSize="small" color="error" />
-                      </IconButton>
-                    )}
-                  </Stack>
-                </CardContent>
-                <Divider />
-                <CardActions sx={{ justifyContent: 'flex-end', p: 2 }}>
-                  <Button 
-                    size="small" 
-                    startIcon={<EditIcon />} 
-                    onClick={() => handleOpenDialog(member)}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    size="small" 
-                    color="error" 
-                    startIcon={<DeleteIcon />}
-                    onClick={() => setDeleteConfirm(member)}
-                  >
-                    Delete
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-          {members.length === 0 && (
-            <Grid item xs={12}>
-              <Box textAlign="center" py={6} bgcolor="#f5f5f5" borderRadius={2}>
-                <Typography color="text.secondary">No team members found</Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
-      )}
+                  {/* Content */}
+                  <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
+                    {isEditing ? (
+                      /* ── EDIT MODE ── */
+                      <>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                          <TextField name="name" label="Name" size="small" value={editForm.name}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                          <TextField name="designation" label="Designation" size="small" value={editForm.designation}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                        </Box>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                          <TextField name="phone" label="Phone" size="small" value={editForm.phone}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                          <TextField name="email" label="Email" size="small" value={editForm.email}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                        </Box>
+                        <TextField name="address" label="Address" size="small" value={editForm.address}
+                          onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                          sx={fieldSx(theme)} />
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                          <TextField name="facebook" label="Facebook" size="small" value={editForm.facebook}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                          <TextField name="instagram" label="Instagram" size="small" value={editForm.instagram}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                          <TextField name="linkedin" label="LinkedIn" size="small" value={editForm.linkedin}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                          <TextField name="youtube" label="YouTube" size="small" value={editForm.youtube}
+                            onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
+                            sx={fieldSx(theme)} />
+                        </Box>
+                        <TextField name="description" label="Description" size="small" value={editForm.description}
+                          onChange={handleEditChange} fullWidth multiline rows={3} InputLabelProps={{ shrink: true }}
+                          sx={fieldSx(theme)} />
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{editingId ? 'Edit Team Member' : 'Add Team Member'}</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="name"
-                label="Name"
-                value={formData.name}
-                onChange={handleChange}
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="designation"
-                label="Designation"
-                value={formData.designation}
-                onChange={handleChange}
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="email"
-                label="Email"
-                value={formData.email}
-                onChange={handleChange}
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="phone"
-                label="Phone"
-                value={formData.phone}
-                onChange={handleChange}
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="profile_picture"
-                label="Profile Picture URL"
-                value={formData.profile_picture}
-                onChange={handleChange}
-                fullWidth
-                required
-                helperText="URL to the main profile image"
-              />
-            </Grid>
-            {formData.profile_picture && (
-              <Grid item xs={12}>
-                <Box display="flex" justifyContent="center">
-                  <Box 
-                    component="img" 
-                    src={formData.profile_picture} 
-                    sx={{ maxHeight: 150, borderRadius: 1 }}
-                    onError={(e: any) => { e.target.style.display = 'none'; }}
-                  />
+                        <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
+                          <Button variant="contained" size="small" startIcon={<CheckIcon />} onClick={saveEdit}
+                            sx={{ textTransform: 'none', fontSize: 12, flex: 1 }}>Save</Button>
+                          <Button variant="outlined" size="small" startIcon={<CloseIcon />} onClick={cancelEdit}
+                            sx={{ textTransform: 'none', fontSize: 12 }}>Cancel</Button>
+                        </Stack>
+                      </>
+                    ) : (
+                      /* ── VIEW MODE ── */
+                      <>
+                        {/* Row 1: Name & Designation */}
+                        <Box>
+                          <Typography sx={{ fontSize: 20, fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1.3 }}>
+                            {m.name}
+                          </Typography>
+                          <Typography sx={{ fontSize: 13, color: theme.palette.primary.main, fontWeight: 500, mt: 0.25 }}>
+                            {m.designation}
+                          </Typography>
+                        </Box>
+
+                        {/* Row 2: Phone & Email */}
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                          <Box>
+                            <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</Typography>
+                            <Typography sx={{ fontSize: 13, color: theme.palette.text.primary }}>{m.phone || '—'}</Typography>
+                          </Box>
+                          <Box>
+                            <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</Typography>
+                            <Typography sx={{ fontSize: 13, color: theme.palette.text.primary, wordBreak: 'break-all' }}>{m.email || '—'}</Typography>
+                          </Box>
+                        </Box>
+
+                        {/* Row 3: Address */}
+                        <Box>
+                          <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Address</Typography>
+                          <Typography sx={{ fontSize: 13, color: theme.palette.text.primary }}>{m.address || '—'}</Typography>
+                        </Box>
+
+                        {/* Row 4: Social Icons */}
+                        <Box sx={{ display: 'flex', gap: 0.75 }}>
+                          <SocialIcon url={m.facebook} Icon={FacebookIcon} color="#1877F2" label="Facebook" />
+                          <SocialIcon url={m.instagram} Icon={InstagramIcon} color="#E1306C" label="Instagram" />
+                          <SocialIcon url={m.linkedin} Icon={LinkedInIcon} color="#0A66C2" label="LinkedIn" />
+                          <SocialIcon url={m.youtube} Icon={YouTubeIcon} color="#FF0000" label="YouTube" />
+                          {!m.facebook && !m.instagram && !m.linkedin && !m.youtube && (
+                            <Typography sx={{ fontSize: 12, color: theme.palette.text.disabled }}>No social links</Typography>
+                          )}
+                        </Box>
+
+                        {/* Row 5: Description */}
+                        <Box sx={{
+                          backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                          borderRadius: 1,
+                          p: 1.5,
+                          border: `1px solid ${theme.palette.divider}`,
+                        }}>
+                          <Typography sx={{
+                            fontSize: 12, color: theme.palette.text.secondary, lineHeight: 1.6,
+                            ...(!expandedDesc[m._id] && {
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }),
+                          }}>
+                            {m.description || 'No description'}
+                          </Typography>
+                          {m.description && m.description.length > 100 && (
+                            <Typography
+                              component="span"
+                              onClick={() => setExpandedDesc(prev => ({ ...prev, [m._id]: !prev[m._id] }))}
+                              sx={{
+                                fontSize: 12, color: theme.palette.primary.main, cursor: 'pointer',
+                                fontWeight: 500, mt: 0.5, display: 'inline-block',
+                                '&:hover': { textDecoration: 'underline' },
+                              }}
+                            >
+                              {expandedDesc[m._id] ? 'Show less' : 'Show more'}
+                            </Typography>
+                          )}
+                        </Box>
+
+                        {/* Actions */}
+                        <Box sx={{ display: 'flex', gap: 0.75, mt: 'auto', pt: 0.5 }}>
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => startEdit(m)}
+                              sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 1, width: 30, height: 30 }}>
+                              <EditIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton size="small" color="error" onClick={() => setDeleteConfirm(m)}
+                              sx={{ border: `1px solid ${isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 1, width: 30, height: 30 }}>
+                              <DeleteIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </>
+                    )}
+                  </Box>
                 </Box>
-              </Grid>
-            )}
-            <Grid item xs={12}>
-              <TextField
-                name="team_member_picture"
-                label="Detail Image URL (Optional)"
-                value={formData.team_member_picture}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="address"
-                label="Address"
-                value={formData.address}
-                onChange={handleChange}
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="description"
-                label="Description"
-                value={formData.description}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                rows={4}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" sx={{ mt: 1, mb: 1 }}>Social Links</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="facebook"
-                label="Facebook URL"
-                value={formData.facebook}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="instagram"
-                label="Instagram URL"
-                value={formData.instagram}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="linkedin"
-                label="LinkedIn URL"
-                value={formData.linkedin}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                name="youtube"
-                label="YouTube URL"
-                value={formData.youtube}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-          </Grid>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+
+      {/* ── Add Member Dialog ── */}
+      <Dialog open={dialogOpen} onClose={closeAddDialog} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { backgroundColor: theme.palette.background.paper, backgroundImage: 'none', borderRadius: 3, border: `1px solid ${theme.palette.divider}` } }}>
+        <DialogTitle sx={{ fontSize: 22, fontWeight: 700, color: theme.palette.text.primary, pb: 0.5 }}>
+          Add Team Member
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            {/* Photo upload */}
+            <Box
+              sx={{
+                border: `2px dashed ${addPicFile ? theme.palette.primary.main : theme.palette.divider}`,
+                borderRadius: 2, p: 2, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', minHeight: 120, cursor: 'pointer',
+                transition: 'border-color 0.2s', '&:hover': { borderColor: theme.palette.primary.main },
+              }}
+              onClick={() => addPicRef.current?.click()}
+            >
+              {addPicFile ? (
+                <img src={URL.createObjectURL(addPicFile)} alt="Preview" style={{ maxHeight: 100, maxWidth: '100%', objectFit: 'contain', borderRadius: 4 }} />
+              ) : (
+                <>
+                  <UploadIcon sx={{ fontSize: 32, color: theme.palette.text.disabled, mb: 0.5 }} />
+                  <Typography sx={{ fontSize: 13, color: theme.palette.text.secondary }}>Click to upload profile photo</Typography>
+                </>
+              )}
+              <input ref={addPicRef} hidden accept="image/*" type="file" onChange={(e) => setAddPicFile(e.target.files?.[0] || null)} />
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField name="name" label="Name *" value={formData.name} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+              <TextField name="designation" label="Designation *" value={formData.designation} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField name="phone" label="Phone" value={formData.phone} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+              <TextField name="email" label="Email *" value={formData.email} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+            </Box>
+            <TextField name="address" label="Address" value={formData.address} onChange={handleChange} fullWidth size="small"
+              InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+              InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+            <TextField name="profile_picture" label="Profile Picture URL (or upload above)" value={formData.profile_picture} onChange={handleChange} fullWidth size="small"
+              InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+              InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: theme.palette.text.primary, mt: 1 }}>Social Links</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField name="facebook" label="Facebook" value={formData.facebook} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+              <TextField name="instagram" label="Instagram" value={formData.instagram} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+              <TextField name="linkedin" label="LinkedIn" value={formData.linkedin} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+              <TextField name="youtube" label="YouTube" value={formData.youtube} onChange={handleChange} fullWidth size="small"
+                InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+                InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+            </Box>
+            <TextField name="description" label="Description" value={formData.description} onChange={handleChange} fullWidth multiline rows={3} size="small"
+              InputLabelProps={{ shrink: true, sx: { color: theme.palette.text.secondary } }}
+              InputProps={{ sx: { color: theme.palette.text.primary } }} sx={fieldSx(theme)} />
+          </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={closeAddDialog} disabled={saving} variant="outlined" sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: 14 }}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={saving || !formData.name || !formData.email || !formData.designation}
+            sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 600, fontSize: 14 }}>
+            {saving ? 'Saving...' : 'Add Member'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}>
-        <DialogTitle>Delete Team Member</DialogTitle>
+      {/* ── Delete Confirmation ── */}
+      <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}
+        PaperProps={{ sx: { backgroundColor: theme.palette.background.paper, backgroundImage: 'none', borderRadius: 3, border: `1px solid ${theme.palette.divider}` } }}>
+        <DialogTitle sx={{ fontSize: 22, fontWeight: 700, color: theme.palette.text.primary }}>Delete Team Member</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete {deleteConfirm?.name}? This action cannot be undone.
+          <Typography sx={{ color: theme.palette.text.secondary, fontSize: 15 }}>
+            Are you sure you want to delete {deleteConfirm?.name}? This action cannot be undone.
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained">Delete</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setDeleteConfirm(null)} variant="outlined" sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: 14 }}>Cancel</Button>
+          <Button onClick={handleDelete} color="error" variant="contained" sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 600, fontSize: 14 }}>Delete</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }

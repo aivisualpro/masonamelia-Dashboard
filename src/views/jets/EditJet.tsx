@@ -157,7 +157,7 @@ const quillDarkSx = {
     '& .ql-stroke': { stroke: 'rgba(255,255,255,0.7) !important' },
     '& .ql-fill': { fill: 'rgba(255,255,255,0.7) !important' },
     '& .ql-picker-label': { color: 'rgba(255,255,255,0.7) !important' },
-    '& .ql-picker-options': { backgroundColor: '#2a3350 !important', border: '1px solid rgba(255,255,255,0.12) !important' },
+    '& .ql-picker-options': { backgroundColor: '#112220 !important', border: '1px solid rgba(255,255,255,0.12) !important' },
     '& .ql-picker-item': { color: 'rgba(255,255,255,0.7) !important' },
   },
   '& .ql-container': {

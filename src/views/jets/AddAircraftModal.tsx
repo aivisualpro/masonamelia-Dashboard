@@ -1,0 +1,525 @@
+'use client';
+
+import * as React from 'react';
+import dynamic from 'next/dynamic';
+import {
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Grid, TextField, MenuItem, Button, Typography,
+  Tabs, Tab, Chip, IconButton, LinearProgress,
+  Divider, Paper, Stepper, Step, StepLabel, Alert, Snackbar
+} from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import {
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  CloudUpload as UploadIcon,
+  FlightTakeoff as JetIcon,
+  Person as PersonIcon,
+  Description as DescIcon,
+  PhotoLibrary as GalleryIcon,
+  CheckCircle as CheckIcon
+} from '@mui/icons-material';
+import { Controller, useForm } from 'react-hook-form';
+import Loader from '@/components/Loader';
+
+const ReactQuill = dynamic(() => import('react-quill'), {
+  ssr: false,
+  loading: () => <Box sx={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></Box>
+});
+
+// ── Constants ────────────────────────────────────────────────────
+const STATUS = [
+  { name: 'For Sale', slug: 'for-sale', color: '#22c55e' },
+  { name: 'Sold', slug: 'sold', color: '#ef4444' },
+  { name: 'Wanted', slug: 'wanted', color: '#3b82f6' },
+  { name: 'Coming Soon', slug: 'coming-soon', color: '#f59e0b' },
+  { name: 'Sale Pending', slug: 'sale-pending', color: '#a855f7' },
+  { name: 'Off Market', slug: 'off-market', color: '#6b7280' },
+  { name: 'Acquired', slug: 'acquired', color: '#06b6d4' },
+];
+
+const SECTION_KEYS = ['general', 'airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'];
+const SECTION_LABELS: Record<string, string> = {
+  general: 'General', airframe: 'Airframe', engine: 'Engine',
+  propeller: 'Propeller', avionics: 'Avionics', equipment: 'Equipment',
+  interior: 'Interior', exterior: 'Exterior', inspection: 'Inspection'
+};
+
+const STEPS = ['Aircraft Info', 'Agent & Media', 'Description'];
+
+interface Category { _id: string; name: string; }
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}
+
+// ── Styled field label ────────────────────────────────────────────
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  const theme = useTheme();
+  return (
+    <Typography sx={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: theme.palette.text.secondary, mb: 0.75 }}>
+      {children}
+    </Typography>
+  );
+}
+
+// ── Section header ────────────────────────────────────────────────
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+  const theme = useTheme();
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+      <Box sx={{
+        width: 32, height: 32, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        bgcolor: alpha(theme.palette.primary.main, 0.12), color: theme.palette.primary.main,
+      }}>
+        {icon}
+      </Box>
+      <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{title}</Typography>
+    </Box>
+  );
+}
+
+// ── Dropzone ──────────────────────────────────────────────────────
+function DropZone({ label, multiple, onFiles, files, onRemove }: {
+  label: string; multiple?: boolean;
+  onFiles: (fs: File[]) => void;
+  files: File[];
+  onRemove: (i: number) => void;
+}) {
+  const theme = useTheme();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [drag, setDrag] = React.useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDrag(false);
+    const dropped = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (dropped.length) onFiles(dropped);
+  };
+
+  return (
+    <Box>
+      <Box
+        onDragOver={e => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        sx={{
+          border: `2px dashed ${drag ? theme.palette.primary.main : theme.palette.divider}`,
+          borderRadius: 2, p: 3, textAlign: 'center', cursor: 'pointer',
+          bgcolor: drag ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+          transition: 'all 0.2s',
+          '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.04) }
+        }}
+      >
+        <UploadIcon sx={{ fontSize: 32, color: theme.palette.text.secondary, mb: 1 }} />
+        <Typography sx={{ fontSize: 13, color: theme.palette.text.secondary }}>
+          Drag & drop or <span style={{ color: theme.palette.primary.main, fontWeight: 600 }}>click to browse</span>
+        </Typography>
+        <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, mt: 0.5 }}>{label}</Typography>
+        <input ref={inputRef} hidden type="file" accept="image/*" multiple={multiple}
+          onChange={e => { if (e.target.files?.length) onFiles(Array.from(e.target.files)); }} />
+      </Box>
+
+      {files.length > 0 && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2 }}>
+          {files.map((f, i) => (
+            <Box key={i} sx={{ position: 'relative', width: 80, height: 80, borderRadius: 1.5, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
+              <img src={URL.createObjectURL(f)} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <IconButton size="small" onClick={e => { e.stopPropagation(); onRemove(i); }}
+                sx={{ position: 'absolute', top: 2, right: 2, bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', p: '2px', '&:hover': { bgcolor: '#ef4444' } }}>
+                <CloseIcon sx={{ fontSize: 12 }} />
+              </IconButton>
+            </Box>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+// ── Main Modal ────────────────────────────────────────────────────
+export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const [step, setStep] = React.useState(0);
+  const [activeTab, setActiveTab] = React.useState('general');
+  const [images, setImages] = React.useState<File[]>([]);
+  const [featuredImage, setFeaturedImage] = React.useState<File[]>([]);
+  const [uploading, setUploading] = React.useState(false);
+  const [snack, setSnack] = React.useState({ open: false, msg: '', severity: 'success' as 'success' | 'error' });
+  const [categories, setCategories] = React.useState<Category[]>([]);
+
+  const { control, register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+    defaultValues: {
+      title: '', year: '', price: '', status: 'for-sale', category: '',
+      location: '', latitude: '', longitude: '',
+      airframe: '', engine: '', engineTwo: '', propeller: '', propellerTwo: '',
+      agentName: '', agentEmail: '', agentPhone: '',
+      overview: '', index: '', videoUrl: '',
+      sections: Object.fromEntries(SECTION_KEYS.map(k => [k, '']))
+    }
+  });
+
+  // Fetch categories when modal opens
+  React.useEffect(() => {
+    if (!open) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/aircraftCategories`)
+      .then(r => r.json())
+      .then(d => setCategories(d.data || []))
+      .catch(() => {});
+  }, [open]);
+
+  const handleReset = React.useCallback(() => {
+    reset();
+    setImages([]);
+    setFeaturedImage([]);
+    setStep(0);
+    setActiveTab('general');
+    SECTION_KEYS.forEach(k => setValue(`sections.${k}` as any, ''));
+  }, [reset, setValue]);
+
+  const handleClose = () => {
+    handleReset();
+    onClose();
+  };
+
+  const onSubmit = async (values: any) => {
+    try {
+      setUploading(true);
+
+      if (!values.index || Number(values.index) < 1) {
+        setSnack({ open: true, severity: 'error', msg: 'List Index must be greater than 0' });
+        setUploading(false);
+        return;
+      }
+
+      const description = {
+        version: 1,
+        sections: Object.fromEntries(SECTION_KEYS.map(k => [k, { html: values.sections[k] || '' }]))
+      };
+
+      const fd = new FormData();
+      fd.append('title', values.title);
+      fd.append('year', String(values.year || ''));
+      fd.append('price', String(values.price || ''));
+      fd.append('status', values.status);
+      fd.append('category', values.category);
+      fd.append('location', values.location);
+      fd.append('latitude', String(values.latitude || ''));
+      fd.append('longitude', String(values.longitude || ''));
+      if (values.airframe) fd.append('airframe', String(values.airframe));
+      if (values.engine) fd.append('engine', String(values.engine));
+      if (values.engineTwo) fd.append('engineTwo', String(values.engineTwo));
+      if (values.propeller) fd.append('propeller', String(values.propeller));
+      if (values.propellerTwo) fd.append('propellerTwo', String(values.propellerTwo));
+      if (values.videoUrl) fd.append('videoUrl', values.videoUrl);
+      fd.append('contactAgent', JSON.stringify({ name: values.agentName, email: values.agentEmail, phone: values.agentPhone }));
+      fd.append('description', JSON.stringify(description));
+      fd.append('overview', values.overview);
+      fd.append('index', String(values.index || ''));
+      images.forEach(f => fd.append('images', f));
+      if (featuredImage[0]) fd.append('featuredImage', featuredImage[0]);
+
+      const resp = await fetch('https://skynet-jet-dashboard-server.onrender.com/api/aircrafts', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: fd,
+      });
+
+      const data = await resp.json();
+      if (!resp.ok || data?.success === false) throw new Error(data?.message || 'Upload failed');
+
+      setSnack({ open: true, severity: 'success', msg: 'Aircraft created successfully!' });
+      handleReset();
+      setTimeout(() => { onCreated(); onClose(); }, 1200);
+    } catch (e: any) {
+      setSnack({ open: true, severity: 'error', msg: e.message });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // ── Step content ───────────────────────────────────────────────
+  const stepContent = [
+    // Step 0: Aircraft Info
+    <Box key="info" sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <SectionHeader icon={<JetIcon sx={{ fontSize: 18 }} />} title="Aircraft Details" />
+      <Grid container spacing={2.5}>
+        <Grid item xs={12} md={8}>
+          <FieldLabel>Title *</FieldLabel>
+          <TextField fullWidth size="small" placeholder="e.g. 2022 Cessna Citation M2 Gen 2"
+            {...register('title', { required: true })}
+            error={!!errors.title} helperText={errors.title ? 'Required' : ''}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <FieldLabel>Status</FieldLabel>
+          <TextField select fullWidth size="small" defaultValue="for-sale" {...register('status')}>
+            {STATUS.map(s => (
+              <MenuItem key={s.slug} value={s.slug}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: s.color }} />
+                  {s.name}
+                </Box>
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Year</FieldLabel>
+          <TextField fullWidth size="small" placeholder="2024" type="number" {...register('year')} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Price *</FieldLabel>
+          <TextField fullWidth size="small" placeholder="e.g. 1500000 or Call" {...register('price', { required: true })}
+            error={!!errors.price} helperText={errors.price ? 'Required' : ''} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Category</FieldLabel>
+          <TextField select fullWidth size="small" defaultValue="" {...register('category')}>
+            <MenuItem value=""><em>None</em></MenuItem>
+            {categories.map(c => <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>)}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Location *</FieldLabel>
+          <TextField fullWidth size="small" placeholder="City, State" {...register('location', { required: true })} error={!!errors.location} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Latitude</FieldLabel>
+          <TextField fullWidth size="small" type="number" {...register('latitude')} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Longitude</FieldLabel>
+          <TextField fullWidth size="small" type="number" {...register('longitude')} />
+        </Grid>
+      </Grid>
+
+      <Divider />
+
+      <Box>
+        <Typography sx={{ fontWeight: 600, fontSize: 13, mb: 2, color: theme.palette.text.secondary }}>FLIGHT HOURS</Typography>
+        <Grid container spacing={2.5}>
+          <Grid item xs={12} sm={4}>
+            <FieldLabel>Airframe (hrs)</FieldLabel>
+            <TextField fullWidth size="small" type="number" {...register('airframe')} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <FieldLabel>Engine 1 (hrs)</FieldLabel>
+            <TextField fullWidth size="small" type="number" {...register('engine')} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <FieldLabel>Engine 2 (hrs)</FieldLabel>
+            <TextField fullWidth size="small" type="number" {...register('engineTwo')} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <FieldLabel>Propeller (hrs)</FieldLabel>
+            <TextField fullWidth size="small" type="number" {...register('propeller')} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <FieldLabel>Propeller 2 (hrs)</FieldLabel>
+            <TextField fullWidth size="small" type="number" {...register('propellerTwo')} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <FieldLabel>List Index *</FieldLabel>
+            <TextField fullWidth size="small" type="number" {...register('index', { required: true })}
+              error={!!errors.index} helperText={errors.index ? 'Required' : ''} />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Divider />
+
+      <Box>
+        <FieldLabel>Video URL</FieldLabel>
+        <TextField fullWidth size="small" placeholder="https://youtube.com/..." {...register('videoUrl')} />
+      </Box>
+    </Box>,
+
+    // Step 1: Agent & Media
+    <Box key="media" sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <SectionHeader icon={<PersonIcon sx={{ fontSize: 18 }} />} title="Contact Agent" />
+      <Grid container spacing={2.5}>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Agent Name</FieldLabel>
+          <TextField fullWidth size="small" {...register('agentName')} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Agent Email</FieldLabel>
+          <TextField fullWidth size="small" type="email" {...register('agentEmail')} />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Agent Phone</FieldLabel>
+          <TextField fullWidth size="small" {...register('agentPhone')} />
+        </Grid>
+      </Grid>
+
+      <Divider />
+
+      <SectionHeader icon={<GalleryIcon sx={{ fontSize: 18 }} />} title="Images" />
+      <Box>
+        <FieldLabel>Featured Image</FieldLabel>
+        <DropZone label="JPG, PNG, WEBP — 1 file max" multiple={false}
+          onFiles={fs => setFeaturedImage([fs[0]])}
+          files={featuredImage}
+          onRemove={() => setFeaturedImage([])} />
+      </Box>
+      <Box>
+        <FieldLabel>Gallery Images</FieldLabel>
+        <DropZone label="JPG, PNG, WEBP — multiple allowed" multiple
+          onFiles={fs => setImages(prev => [...prev, ...fs])}
+          files={images}
+          onRemove={i => setImages(prev => prev.filter((_, idx) => idx !== i))} />
+      </Box>
+    </Box>,
+
+    // Step 2: Description
+    <Box key="desc" sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <SectionHeader icon={<DescIcon sx={{ fontSize: 18 }} />} title="Overview & Sections" />
+
+      <Box>
+        <FieldLabel>Jet Overview</FieldLabel>
+        <Controller control={control} name="overview"
+          render={({ field }) => (
+            <ReactQuill theme="snow" value={field.value || ''} onChange={field.onChange} placeholder="Write an overview..." />
+          )} />
+      </Box>
+
+      <Divider />
+
+      <Box>
+        <FieldLabel>Detailed Sections</FieldLabel>
+        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant="scrollable" scrollButtons allowScrollButtonsMobile
+          sx={{ mb: 2, '& .MuiTab-root': { fontSize: 12, minHeight: 36, textTransform: 'none' } }}>
+          {SECTION_KEYS.map(k => <Tab key={k} value={k} label={SECTION_LABELS[k]} />)}
+        </Tabs>
+        {SECTION_KEYS.map(k => (
+          <Box key={k} hidden={activeTab !== k}>
+            <Controller control={control} name={`sections.${k}` as any}
+              render={({ field }) => (
+                <ReactQuill theme="snow" value={field.value || ''} onChange={field.onChange}
+                  placeholder={`Write ${SECTION_LABELS[k]} details...`} />
+              )} />
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  ];
+
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={uploading ? undefined : handleClose}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            bgcolor: theme.palette.background.paper,
+            backgroundImage: 'none',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+            height: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+          }
+        }}
+      >
+        {/* Header */}
+        <Box sx={{
+          px: 3, py: 2.5, flexShrink: 0,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: isDark
+            ? `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.15)}, transparent)`
+            : `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.12)}, transparent)`,
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{
+              width: 40, height: 40, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: theme.palette.primary.main, color: '#fff',
+            }}>
+              <JetIcon sx={{ fontSize: 22 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>Add New Aircraft</Typography>
+              <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary }}>Fill in the details to list a new aircraft</Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={handleClose} disabled={uploading} size="small"
+            sx={{ bgcolor: alpha(theme.palette.text.primary, 0.06), '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' } }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        {/* Stepper */}
+        <Box sx={{ px: 3, py: 2, flexShrink: 0, borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <Stepper activeStep={step} alternativeLabel>
+            {STEPS.map((label, i) => (
+              <Step key={label} completed={i < step}>
+                <StepLabel
+                  onClick={() => { if (i < step) setStep(i); }}
+                  sx={{ cursor: i < step ? 'pointer' : 'default', '& .MuiStepLabel-label': { fontSize: 12 } }}
+                >
+                  {label}
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Box>
+
+        {/* Upload progress */}
+        {uploading && <LinearProgress sx={{ flexShrink: 0 }} />}
+
+        {/* Content */}
+        <DialogContent sx={{ flex: 1, overflow: 'auto', px: 3, py: 3 }}>
+          <form id="add-aircraft-form" onSubmit={handleSubmit(onSubmit)}>
+            {stepContent[step]}
+          </form>
+        </DialogContent>
+
+        {/* Footer */}
+        <Box sx={{
+          px: 3, py: 2, flexShrink: 0,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          bgcolor: alpha(theme.palette.background.default, 0.5),
+        }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="outlined" size="small" onClick={handleClose} disabled={uploading}>Cancel</Button>
+            {step > 0 && (
+              <Button variant="outlined" size="small" onClick={() => setStep(s => s - 1)} disabled={uploading}>Back</Button>
+            )}
+          </Box>
+
+          {step < STEPS.length - 1 ? (
+            <Button variant="contained" size="small" onClick={() => setStep(s => s + 1)} sx={{ minWidth: 100 }}>
+              Next →
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              size="small"
+              type="submit"
+              form="add-aircraft-form"
+              disabled={uploading}
+              startIcon={uploading ? undefined : <CheckIcon />}
+              sx={{ minWidth: 140, bgcolor: '#22c55e', '&:hover': { bgcolor: '#16a34a' } }}
+            >
+              {uploading ? 'Creating…' : 'Create Aircraft'}
+            </Button>
+          )}
+        </Box>
+      </Dialog>
+
+      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity={snack.severity} onClose={() => setSnack(s => ({ ...s, open: false }))} sx={{ width: '100%' }}>
+          {snack.msg}
+        </Alert>
+      </Snackbar>
+    </>
+  );
+}

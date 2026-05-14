@@ -1,4 +1,7 @@
 import PropTypes from 'prop-types';
+import React from 'react';
+import Image from 'next/image';
+import { optimizeCloudinaryUrl } from '../../../utils/cloudinary';
 
 // material-ui
 import Link from '@mui/material/Link';
@@ -11,11 +14,13 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import TablePagination from '@mui/material/TablePagination';
 import { alpha, useTheme } from '@mui/material/styles';
 
 // api
-import { useEffect, useState } from 'react';
-import { getLatestAircraft } from '../../../api/aircraft.api';
+import { useLatestAircraft } from '../../../api/hooks';
+
+const PAGE_SIZE = 25;
 
 // ---------------- helpers ----------------
 const headCells = [
@@ -31,7 +36,7 @@ const headCells = [
   { id: 'propeller', label: 'Propeller', align: 'center' },
 ];
 
-function OrderTableHead() {
+const OrderTableHead = React.memo(function OrderTableHead() {
   return (
     <TableHead>
       <TableRow>
@@ -47,10 +52,10 @@ function OrderTableHead() {
       </TableRow>
     </TableHead>
   );
-}
+});
 
 // ------ Status Pill ------
-function StatusPill({ value }) {
+const StatusPill = React.memo(function StatusPill({ value }) {
   const theme = useTheme();
   const slug = String(value || '').toLowerCase();
 
@@ -112,31 +117,71 @@ function StatusPill({ value }) {
       }}
     />
   );
-}
+});
 
-StatusPill.propTypes = { value: PropTypes.string };
+
+
+// ── Memoized table row ──
+const OrderRow = React.memo(function OrderRow({ row, index }) {
+  return (
+    <TableRow
+      hover
+      sx={{
+        '&:nth-of-type(odd)': { bgcolor: 'action.hover' }
+      }}
+    >
+      <TableCell align="left">
+        <Link color="secondary" underline="hover">
+          {index + 1}
+        </Link>
+      </TableCell>
+
+      <TableCell align="center">
+        {row?.images?.[0] ? (
+          <Image
+            src={optimizeCloudinaryUrl(row.images[0])}
+            width={100}
+            height={60}
+            sizes="100px"
+            style={{ borderRadius: 6, objectFit: 'cover' }}
+            alt={row?.title || 'Aircraft'}
+          />
+        ) : (
+          <Box sx={{ width: 56, height: 36, borderRadius: 1, bgcolor: 'action.selected' }} />
+        )}
+      </TableCell>
+
+      <TableCell align="left">
+        {row?.title ?? '—'}
+      </TableCell>
+
+      <TableCell align="center">{row?.year ?? '—'}</TableCell>
+      <TableCell align="center">{row?.price ? row.price : 'Call'}</TableCell>
+      <TableCell align="center">{row?.category?.name ?? '—'}</TableCell>
+
+      <TableCell align="center">
+        <StatusPill value={row?.status} />
+      </TableCell>
+
+      <TableCell align="center">{row?.airframe ?? '—'}</TableCell>
+      <TableCell align="center">{row?.engineTwo ? row.engine + ' / ' + row.engineTwo : row.engine}</TableCell>
+      <TableCell align="center">{row?.propellerTwo ? row.propeller + ' / ' + row.propellerTwo : row.propeller}</TableCell>
+    </TableRow>
+  );
+}, (prev, next) => prev.row._id === next.row._id && prev.index === next.index);
 
 // ---------------- Table ----------------
 export default function OrderTable() {
-  const [rows, setRows] = useState([]);
+  const { rows } = useLatestAircraft();
+  const [page, setPage] = React.useState(0);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await getLatestAircraft();
-        // Handle both {success, data} format and direct data format
-        if (response?.success && response?.data) {
-          setRows(response.data);
-        } else if (response?.data) {
-          setRows(response.data);
-        } else if (Array.isArray(response)) {
-          setRows(response);
-        }
-      } catch (e) {
-        console.error('Error fetching aircraft:', e);
-        setRows([]);
-      }
-    })();
+  const paginatedRows = React.useMemo(
+    () => rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [rows, page]
+  );
+
+  const handleChangePage = React.useCallback((_, newPage) => {
+    setPage(newPage);
   }, []);
 
   return (
@@ -156,54 +201,22 @@ export default function OrderTable() {
         <Table aria-labelledby="tableTitle" size="small" stickyHeader>
           <OrderTableHead />
           <TableBody>
-            {rows?.map((row, index) => (
-              <TableRow
-                key={row._id}
-                hover
-                sx={{
-                  '&:nth-of-type(odd)': { bgcolor: 'action.hover' }
-                }}
-              >
-                <TableCell align="left">
-                  <Link color="secondary" underline="hover">
-                    {index + 1}
-                  </Link>
-                </TableCell>
-
-                <TableCell align="center">
-                  {row?.images?.[0] ? (
-                    <img
-                      src={row.images[0]}
-                      loading="lazy"
-                      style={{ width: 100, height: 60, borderRadius: 6, objectFit: 'cover' }}
-                      alt=""
-                    />
-                  ) : (
-                    <Box sx={{ width: 56, height: 36, borderRadius: 1, bgcolor: 'action.selected' }} />
-                  )}
-                </TableCell>
-
-                <TableCell align="left">
-                  {row?.title ?? '—'}
-                </TableCell>
-
-
-                <TableCell align="center">{row?.year ?? '—'}</TableCell>
-                <TableCell align="center">{row?.price ? row.price : 'Call'}</TableCell>
-                <TableCell align="center">{row?.category?.name ?? '—'}</TableCell>
-
-                <TableCell align="center">
-                  <StatusPill value={row?.status} />
-                </TableCell>
-
-                <TableCell align="center">{row?.airframe ?? '—'}</TableCell>
-                <TableCell align="center">{row?.engineTwo ? row.engine + ' / ' + row.engineTwo : row.engine}</TableCell>
-                <TableCell align="center">{row?.propellerTwo ? row.propeller + ' / ' + row.propellerTwo : row.propeller}</TableCell>
-              </TableRow>
+            {paginatedRows?.map((row, index) => (
+              <OrderRow key={row._id} row={row} index={page * PAGE_SIZE + index} />
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+      {rows.length > PAGE_SIZE && (
+        <TablePagination
+          component="div"
+          count={rows.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={PAGE_SIZE}
+          rowsPerPageOptions={[PAGE_SIZE]}
+        />
+      )}
     </Box>
   );
 }

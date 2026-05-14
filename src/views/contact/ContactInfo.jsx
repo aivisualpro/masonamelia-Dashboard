@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import dynamic from 'next/dynamic';
+import Loader from 'components/Loader';
+const DataGrid = dynamic(() => import('@mui/x-data-grid').then(m => m.DataGrid), { ssr: false, loading: () => <Loader /> });
+const GridToolbar = dynamic(() => import('@mui/x-data-grid').then(m => m.GridToolbar), { ssr: false });
 import {
   IconButton, Tooltip, Typography, Button,
   Dialog, DialogTitle, DialogContent, DialogActions

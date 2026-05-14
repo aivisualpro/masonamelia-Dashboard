@@ -7,4 +7,6 @@ const AuthorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+AuthorSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.models.Author || mongoose.model('Author', AuthorSchema);

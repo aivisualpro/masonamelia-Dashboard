@@ -7,4 +7,6 @@ const logoSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+logoSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.models.Logo || mongoose.model("Logo", logoSchema);
