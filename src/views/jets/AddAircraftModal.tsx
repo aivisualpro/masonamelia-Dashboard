@@ -1,17 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import dynamic from 'next/dynamic';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  Dialog, DialogContent,
   Box, Grid, TextField, MenuItem, Button, Typography,
-  Tabs, Tab, Chip, IconButton, LinearProgress,
-  Divider, Paper, Stepper, Step, StepLabel, Alert, Snackbar
+  Tabs, Tab, IconButton, LinearProgress,
+  Divider, Stepper, Step, StepLabel, Alert, Snackbar
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import {
   Close as CloseIcon,
-  Delete as DeleteIcon,
   CloudUpload as UploadIcon,
   FlightTakeoff as JetIcon,
   Person as PersonIcon,
@@ -19,13 +17,7 @@ import {
   PhotoLibrary as GalleryIcon,
   CheckCircle as CheckIcon
 } from '@mui/icons-material';
-import { Controller, useForm } from 'react-hook-form';
-import Loader from '@/components/Loader';
-
-const ReactQuill = dynamic(() => import('react-quill'), {
-  ssr: false,
-  loading: () => <Box sx={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader /></Box>
-});
+import { useForm } from 'react-hook-form';
 
 // ── Constants ────────────────────────────────────────────────────
 const STATUS = [
@@ -381,27 +373,40 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
 
       <Box>
         <FieldLabel>Jet Overview</FieldLabel>
-        <Controller control={control} name="overview"
-          render={({ field }) => (
-            <ReactQuill theme="snow" value={field.value || ''} onChange={field.onChange} placeholder="Write an overview..." />
-          )} />
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          placeholder="Write an overview of the aircraft..."
+          {...register('overview')}
+          sx={{ '& .MuiInputBase-root': { fontFamily: 'inherit' } }}
+        />
       </Box>
 
       <Divider />
 
       <Box>
         <FieldLabel>Detailed Sections</FieldLabel>
-        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant="scrollable" scrollButtons allowScrollButtonsMobile
-          sx={{ mb: 2, '& .MuiTab-root': { fontSize: 12, minHeight: 36, textTransform: 'none' } }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, v) => setActiveTab(v)}
+          variant="scrollable"
+          scrollButtons
+          allowScrollButtonsMobile
+          sx={{ mb: 2, '& .MuiTab-root': { fontSize: 12, minHeight: 36, textTransform: 'none' } }}
+        >
           {SECTION_KEYS.map(k => <Tab key={k} value={k} label={SECTION_LABELS[k]} />)}
         </Tabs>
         {SECTION_KEYS.map(k => (
           <Box key={k} hidden={activeTab !== k}>
-            <Controller control={control} name={`sections.${k}` as any}
-              render={({ field }) => (
-                <ReactQuill theme="snow" value={field.value || ''} onChange={field.onChange}
-                  placeholder={`Write ${SECTION_LABELS[k]} details...`} />
-              )} />
+            <TextField
+              fullWidth
+              multiline
+              rows={5}
+              placeholder={`Write ${SECTION_LABELS[k]} details...`}
+              {...register(`sections.${k}` as any)}
+              sx={{ '& .MuiInputBase-root': { fontFamily: 'inherit' } }}
+            />
           </Box>
         ))}
       </Box>

@@ -40,6 +40,11 @@ export default function ThemeCustomization({ children }) {
     });
   };
 
+  // Sync mode to body for CSS selectors (e.g. Quill dark mode)
+  useEffect(() => {
+    document.body.setAttribute('data-theme', mode);
+  }, [mode]);
+
   const theme = Palette(mode, 'default');
 
   const themeTypography = Typography(`var(--font-public-sans), 'Public Sans', sans-serif`);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-// import "./globals.css"; // Disabling tailwind globals for now to avoid conflict with MUI? Or keep it? keeping it.
+import "./globals.css";
+import 'react-quill/dist/quill.snow.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
 import localFont from 'next/font/local';
 

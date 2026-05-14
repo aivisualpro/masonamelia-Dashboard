@@ -1,16 +1,11 @@
-@import "tailwindcss";
+/* globals.css */
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -25,3 +20,49 @@ body {
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Quill dark-mode overrides ─────────────────────────────────── */
+/* ThemeCustomization sets data-theme="dark" on <body>            */
+[data-theme="dark"] .ql-toolbar,
+[data-theme="dark"] .ql-container {
+  background-color: #1e1e2e;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* toolbar icons → white */
+[data-theme="dark"] .ql-toolbar .ql-stroke {
+  stroke: #e2e8f0 !important;
+}
+[data-theme="dark"] .ql-toolbar .ql-fill {
+  fill: #e2e8f0 !important;
+}
+[data-theme="dark"] .ql-toolbar .ql-picker-label,
+[data-theme="dark"] .ql-toolbar .ql-picker-item {
+  color: #e2e8f0 !important;
+}
+
+/* hover/active state */
+[data-theme="dark"] .ql-toolbar button:hover .ql-stroke,
+[data-theme="dark"] .ql-toolbar button.ql-active .ql-stroke {
+  stroke: #ffffff !important;
+}
+[data-theme="dark"] .ql-toolbar button:hover .ql-fill,
+[data-theme="dark"] .ql-toolbar button.ql-active .ql-fill {
+  fill: #ffffff !important;
+}
+
+/* editor text */
+[data-theme="dark"] .ql-editor {
+  color: #e2e8f0;
+}
+[data-theme="dark"] .ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* dropdown picker background */
+[data-theme="dark"] .ql-picker-options {
+  background-color: #2d2d3f !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+

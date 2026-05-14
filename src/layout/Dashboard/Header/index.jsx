@@ -42,41 +42,82 @@ export default function Header() {
   ];
 
   const mainHeader = (
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, px: 2 }}>
-      {/* Left: Logo + Nav */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, md: 4 } }}>
+    <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, px: 2 }}>
+
+      {/* Left: Logo */}
+      <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, zIndex: 1 }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
           <Image src="/logo.png" alt="Mason Amelia" width={120} height={36} priority style={{ height: 36, width: 'auto' }} />
         </Link>
-        
-        {!downLG && (
-          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-            {navLinks.map((link) => (
-              <Link key={link.title} href={link.path} style={{ textDecoration: 'none' }}>
-                <Typography 
-                  variant="body2" 
-                  color="text.primary" 
-                  sx={{ 
-                    fontWeight: 500,
-                    fontSize: '0.875rem',
-                    transition: 'color 0.15s ease',
-                    '&:hover': { 
-                      color: 'primary.main',
-                    },
-                  }}
-                >
-                  {link.title}
-                </Typography>
-              </Link>
-            ))}
-          </Box>
-        )}
       </Box>
-      
-      {/* Right: Add Aircraft + Theme + Logout */}
-      {headerContent}
+
+      {/* Center: Nav — absolutely centered */}
+      {!downLG && (
+        <Box sx={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.5,
+        }}>
+          {navLinks.map((link) => {
+            const isActive = pathname === link.path || pathname.startsWith(link.path + '/');
+            return (
+              <Link key={link.title} href={link.path} style={{ textDecoration: 'none' }}>
+                <Box sx={{
+                  position: 'relative',
+                  px: 1.5,
+                  py: 0.75,
+                  borderRadius: 1,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                  // animated underline
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '50%',
+                    transform: isActive ? 'translateX(-50%) scaleX(1)' : 'translateX(-50%) scaleX(0)',
+                    transformOrigin: 'center',
+                    width: '70%',
+                    height: '2px',
+                    borderRadius: '2px 2px 0 0',
+                    bgcolor: 'primary.main',
+                    transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  },
+                  '&:hover::after': {
+                    transform: 'translateX(-50%) scaleX(1)',
+                    opacity: isActive ? 1 : 0.4,
+                  },
+                }}>
+                  <Typography sx={{
+                    fontWeight: isActive ? 600 : 500,
+                    fontSize: '0.875rem',
+                    color: isActive ? 'primary.main' : 'text.primary',
+                    transition: 'color 0.15s, font-weight 0.15s',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}>
+                    {link.title}
+                  </Typography>
+                </Box>
+              </Link>
+            );
+          })}
+        </Box>
+      )}
+
+      {/* Right: Actions */}
+      <Box sx={{ flexShrink: 0, zIndex: 1 }}>
+        {headerContent}
+      </Box>
     </Box>
   );
+
 
   return (
     <AppBar 
