@@ -365,7 +365,7 @@ export default function EditJet({ id }: EditJetProps) {
       // Redirect after success
       if (typeof window !== 'undefined') {
         setTimeout(() => {
-          window.location.href = '/jets';
+          window.location.href = '/aircrafts';
         }, 700);
       }
     } catch (e) {
@@ -413,7 +413,7 @@ export default function EditJet({ id }: EditJetProps) {
                   error={!!errors.title}
                   helperText={errors.title ? 'Required' : ''}
                 />
-                {/* Row 2: Year, Price, Category */}
+                {/* Row 2: Year, Price, Make */}
                 <FieldRow>
                   <TextField label="Year" type="number" fullWidth {...tf} {...register('year')} />
                   <TextField label="Price" type="number" fullWidth required {...tf} {...register('price', { required: true })} />
@@ -422,7 +422,7 @@ export default function EditJet({ id }: EditJetProps) {
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <TextField select label="Category" fullWidth {...tf} {...field}>
+                      <TextField select label="Make" fullWidth {...tf} {...field}>
                         {categories?.map((s) => (
                           <MenuItem key={s?._id} value={String(s?._id)}>{s?.name}</MenuItem>
                         ))}

@@ -27,27 +27,72 @@ export default function Header() {
   const theme = useTheme();
 
   // Show back button on detail/edit pages
-  const showBack = pathname.startsWith('/jets/edit') || pathname.startsWith('/jets/add');
+  const showBack = pathname.startsWith('/aircrafts/edit') || pathname.startsWith('/aircrafts/add');
 
   // header content
   const headerContent = useMemo(() => <HeaderContent />, []);
 
   const navLinks = [
-    { title: 'Jets', path: '/jets' },
-    { title: 'Categories', path: '/jets-categories' },
+    { title: 'Aircrafts', path: '/aircrafts' },
+    { title: 'Make', path: '/make' },
     { title: 'Brands', path: '/brands' },
     { title: 'Teams', path: '/teams' },
     { title: 'Testimonials', path: '/testimonials' },
-    { title: 'Contacts', path: '/contact' }
+    { title: 'Contact Info', path: '/contact-info' }
   ];
 
   const mainHeader = (
     <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, px: 2 }}>
 
-      {/* Left: Logo */}
+      {/* Left: Logo with hover swap */}
       <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, zIndex: 1 }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
-          <Image src="/logo.png" alt="Mason Amelia" width={120} height={36} priority style={{ height: 36, width: 'auto' }} />
+          <Box
+            sx={{
+              position: 'relative',
+              width: 120,
+              height: 36,
+              '&:hover .logo-default': { opacity: 0 },
+              '&:hover .logo-hover': { opacity: 1 },
+            }}
+          >
+            {/* Default: White logo */}
+            <Image
+              className="logo-default"
+              src="/logowhite.svg"
+              alt="Mason Amelia"
+              width={120}
+              height={36}
+              priority
+              style={{
+                height: 36,
+                width: 'auto',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transition: 'opacity 0.2s ease-in-out',
+                opacity: 1,
+              }}
+            />
+            {/* Hover: Colored logo */}
+            <Image
+              className="logo-hover"
+              src="/logo.svg"
+              alt="Mason Amelia"
+              width={120}
+              height={36}
+              priority
+              style={{
+                height: 36,
+                width: 'auto',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transition: 'opacity 0.2s ease-in-out',
+                opacity: 0,
+              }}
+            />
+          </Box>
         </Link>
       </Box>
 

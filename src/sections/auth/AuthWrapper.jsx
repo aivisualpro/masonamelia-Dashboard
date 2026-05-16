@@ -62,7 +62,7 @@ export default function AuthWrapper({ children }) {
           }}
         >
           <Image
-            src="/assets/images/logo.png"
+            src="/logowhite.svg"
             alt="Mason Amelia"
             width={220}
             height={66}

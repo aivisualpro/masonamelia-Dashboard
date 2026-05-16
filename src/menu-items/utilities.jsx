@@ -10,22 +10,22 @@ const icons = {
 // ==============================|| MENU ITEMS - UTILITIES ||============================== //
 
 const utilities = {
-  id: 'jets',
-  title: 'Jets',
+  id: 'aircrafts',
+  title: 'Aircrafts',
   type: 'group',
   children: [
     {
-      id: 'jets',
-      title: 'Jets',
+      id: 'aircrafts',
+      title: 'Aircrafts',
       type: 'item',
-      url: '/jets',
+      url: '/aircrafts',
       icon: icons.AirplanemodeActiveIcon
     },
     {
-      id: 'jets-categories',
-      title: 'Jets Categories',
+      id: 'make',
+      title: 'Make',
       type: 'item',
-      url: '/jets-categories',
+      url: '/make',
       icon: icons.CategoryOutlinedIcon
     }
   ]

@@ -2,7 +2,7 @@
 import { useTheme } from '@mui/material/styles';
 import Image from 'next/image';
 
-const logoSrc = "/logo.png";
+const logoSrc = "/logowhite.svg";
 
 export default function LogoMain() {
   const theme = useTheme();

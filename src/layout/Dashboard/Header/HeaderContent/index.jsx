@@ -42,9 +42,9 @@ export default function HeaderContent() {
   };
 
   // Route-specific action buttons
-  const showAddAircraft = pathname === '/jets';
-  const showAddCategory = pathname === '/jets-categories';
-  const showBack = pathname.startsWith('/jets/edit') || pathname.startsWith('/jets/add');
+  const showAddAircraft = pathname === '/aircrafts';
+  const showAddCategory = pathname === '/make';
+  const showBack = pathname.startsWith('/aircrafts/edit') || pathname.startsWith('/aircrafts/add');
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -52,7 +52,7 @@ export default function HeaderContent() {
       {/* Back button on detail pages */}
       {showBack && (
         <IconButton
-          onClick={() => router.push('/jets')}
+          onClick={() => router.push('/aircrafts')}
           size="small"
           sx={{
             border: `1px solid ${theme.palette.divider}`,
@@ -65,7 +65,7 @@ export default function HeaderContent() {
         </IconButton>
       )}
 
-      {/* Route-specific: Add Aircraft only on /jets */}
+      {/* Route-specific: Add Aircraft only on /aircrafts */}
       {showAddAircraft && (
         <Button
           variant="contained"
@@ -78,7 +78,7 @@ export default function HeaderContent() {
         </Button>
       )}
 
-      {/* Route-specific: Add Category only on /jets-categories */}
+      {/* Route-specific: Add Category only on /make */}
       {showAddCategory && (
         <Button
           variant="contained"
@@ -130,8 +130,8 @@ export default function HeaderContent() {
         </Button>
       )}
 
-      {/* Route-specific: Save Changes only on /contact */}
-      {pathname === '/contact' && (
+      {/* Route-specific: Save Changes only on /contact-info */}
+      {pathname === '/contact-info' && (
         <Button
           variant="contained"
           color="primary"

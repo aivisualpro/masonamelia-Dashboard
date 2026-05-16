@@ -116,7 +116,7 @@ const ViewJetCategories = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5} alignItems="center">
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => navigate(`/jets-categories/edit/${params.row.id}`)}>
+            <IconButton size="small" onClick={() => navigate(`/make/edit/${params.row.id}`)}>
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -148,7 +148,7 @@ const ViewJetCategories = () => {
               Delete Selected ({selection.length})
             </Button>
           )}
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/jets-categories/add")}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/make/add")}>
             Add Category
           </Button>
         </div>

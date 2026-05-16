@@ -8,15 +8,15 @@ const icons = {
 // ==============================|| MENU ITEMS - UTILITIES ||============================== //
 
 const testimonials = {
-    id: 'contacts',
-    title: 'Contacts',
+    id: 'contact-info',
+    title: 'Contact Info',
     type: 'group',
     children: [
         {
-            id: 'contacts',
-            title: 'Contacts',
+            id: 'contact-info',
+            title: 'Contact Info',
             type: 'item',
-            url: '/contact',
+            url: '/contact-info',
             icon: icons.CallIcon
         }
     ]

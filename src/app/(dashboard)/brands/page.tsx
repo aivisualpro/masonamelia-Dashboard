@@ -3,15 +3,8 @@
 import * as React from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
   Dialog,
   DialogTitle,
@@ -20,10 +13,11 @@ import {
   Stack,
   Tooltip,
   CircularProgress,
-  TextField
+  useTheme
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import axios from 'axios';
 import { useBrands } from '@/api/hooks';
 
@@ -40,26 +34,55 @@ export default function BrandsPage() {
   const { brands: rawBrands, isLoading: loading, mutate: mutateBrands } = useBrands();
   const brands = rawBrands as Brand[];
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState({ logo: '' });
   const [saving, setSaving] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState<Brand | null>(null);
+  const [updatingId, setUpdatingId] = React.useState<string | null>(null);
 
-  const handleOpenDialog = () => {
-    setFormData({ logo: '' });
-    setDialogOpen(true);
-  };
+  // File upload state for Add dialog
+  const [addFile, setAddFile] = React.useState<File | null>(null);
+  const [addPreview, setAddPreview] = React.useState<string | null>(null);
+  const addInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Hidden file input refs for per-card edit
+  const editInputRef = React.useRef<HTMLInputElement>(null);
+  const editTargetId = React.useRef<string | null>(null);
+
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  // Listen for header "Add Brand" button
+  React.useEffect(() => {
+    const handler = () => {
+      setAddFile(null);
+      setAddPreview(null);
+      setDialogOpen(true);
+    };
+    window.addEventListener('open-add-brand', handler);
+    return () => window.removeEventListener('open-add-brand', handler);
+  }, []);
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
-    setFormData({ logo: '' });
+    setAddFile(null);
+    setAddPreview(null);
+  };
+
+  const handleAddFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAddFile(file);
+      setAddPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSave = async () => {
-    if (!formData.logo.trim()) return;
-    
+    if (!addFile) return;
+
     setSaving(true);
     try {
-      await axios.post(`${API_BASE}`, formData);
+      const fd = new FormData();
+      fd.append('logo', addFile, addFile.name);
+      await axios.post(API_BASE, fd);
       handleCloseDialog();
       mutateBrands();
     } catch (error) {
@@ -69,9 +92,36 @@ export default function BrandsPage() {
     }
   };
 
+  // Edit: trigger hidden file input for a specific brand
+  const handleEditClick = (brandId: string) => {
+    editTargetId.current = brandId;
+    editInputRef.current?.click();
+  };
+
+  const handleEditFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const brandId = editTargetId.current;
+    if (!file || !brandId) return;
+
+    // Reset input so re-selecting the same file triggers onChange
+    e.target.value = '';
+
+    setUpdatingId(brandId);
+    try {
+      const fd = new FormData();
+      fd.append('logo', file, file.name);
+      await axios.put(`${API_BASE}/${brandId}`, fd);
+      mutateBrands();
+    } catch (error) {
+      console.error('Error updating brand:', error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteConfirm) return;
-    
+
     try {
       await axios.delete(`${API_BASE}/${deleteConfirm._id}`);
       setDeleteConfirm(null);
@@ -83,105 +133,224 @@ export default function BrandsPage() {
 
   return (
     <Box>
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-          <Typography variant="h5" fontWeight={600}>
-            Brands
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-          >
-            Add Brand
-          </Button>
-        </Stack>
+      {/* Hidden file input for editing cards */}
+      <input
+        ref={editInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={handleEditFileChange}
+      />
 
-        {loading ? (
-          <Box display="flex" justifyContent="center" py={4}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Logo URL</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Preview</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Created At</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {brands.map((brand, index) => (
-                  <TableRow key={brand._id} hover>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {brand.logo}
-                    </TableCell>
-                    <TableCell>
-                      <Box 
-                        component="img" 
-                        src={brand.logo} 
-                        alt="brand" 
-                        sx={{ height: 40, objectFit: 'contain', maxWidth: 100 }}
-                        onError={(e: any) => { e.target.src = 'https://placehold.co/100x40?text=No+Image'; }}
-                      />
-                    </TableCell>
-                    <TableCell>{new Date(brand.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Delete">
-                        <IconButton size="small" color="error" onClick={() => setDeleteConfirm(brand)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {brands.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                      No brands found
-                    </TableCell>
-                  </TableRow>
+      {loading ? (
+        <Box display="flex" justifyContent="center" py={8}>
+          <CircularProgress />
+        </Box>
+      ) : brands.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 10, color: 'text.secondary' }}>
+          <Typography variant="h6" sx={{ mb: 1 }}>No brands yet</Typography>
+          <Typography variant="body2">Click &quot;Add Brand&quot; to get started.</Typography>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(2, 1fr)',
+              sm: 'repeat(3, 1fr)',
+              md: 'repeat(4, 1fr)',
+              lg: 'repeat(5, 1fr)',
+              xl: 'repeat(6, 1fr)',
+            },
+            gap: 2,
+          }}
+        >
+          {brands.map((brand) => {
+            const isUpdating = updatingId === brand._id;
+            return (
+              <Box
+                key={brand._id}
+                sx={{
+                  position: 'relative',
+                  borderRadius: 2.5,
+                  border: '1px solid',
+                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                  bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                  overflow: 'hidden',
+                  transition: 'all 0.2s ease',
+                  opacity: isUpdating ? 0.5 : 1,
+                  '&:hover': {
+                    borderColor: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.16)',
+                    boxShadow: isDark
+                      ? '0 4px 24px rgba(0,0,0,0.3)'
+                      : '0 4px 24px rgba(0,0,0,0.08)',
+                    transform: 'translateY(-2px)',
+                    '& .brand-actions': {
+                      opacity: 1,
+                    },
+                  },
+                }}
+              >
+                {/* Updating spinner overlay */}
+                {isUpdating && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      zIndex: 3,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.6)',
+                      backdropFilter: 'blur(2px)',
+                    }}
+                  >
+                    <CircularProgress size={24} />
+                  </Box>
                 )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
 
-      {/* Add Dialog */}
+                {/* Action buttons — visible on hover */}
+                <Stack
+                  className="brand-actions"
+                  direction="row"
+                  spacing={0.5}
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    zIndex: 2,
+                    opacity: 0,
+                    transition: 'opacity 0.15s ease',
+                  }}
+                >
+                  <Tooltip title="Replace Image">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEditClick(brand._id)}
+                      sx={{
+                        bgcolor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
+                        backdropFilter: 'blur(4px)',
+                        '&:hover': {
+                          bgcolor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,1)',
+                        },
+                      }}
+                    >
+                      <EditIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => setDeleteConfirm(brand)}
+                      sx={{
+                        bgcolor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
+                        backdropFilter: 'blur(4px)',
+                        '&:hover': {
+                          bgcolor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,1)',
+                        },
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+
+                {/* Logo image area */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 3,
+                    minHeight: 120,
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => handleEditClick(brand._id)}
+                >
+                  <Box
+                    component="img"
+                    src={brand.logo}
+                    alt="brand"
+                    sx={{
+                      maxWidth: '100%',
+                      maxHeight: 60,
+                      objectFit: 'contain',
+                      filter: isDark ? 'brightness(0.9)' : 'none',
+                    }}
+                    onError={(e: any) => {
+                      e.target.src = 'https://placehold.co/160x60?text=No+Image';
+                    }}
+                  />
+                </Box>
+
+
+              </Box>
+            );
+          })}
+        </Box>
+      )}
+
+      {/* Add Dialog — now uses file upload */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Add Brand</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Logo URL"
-              value={formData.logo}
-              onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-              fullWidth
-              autoFocus
-              helperText="Enter the full URL of the brand logo image"
+            <input
+              ref={addInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleAddFileChange}
             />
-            {formData.logo && (
-              <Box sx={{ mt: 2, p: 2, border: '1px dashed #ccc', borderRadius: 1, textAlign: 'center' }}>
-                <Typography variant="caption" display="block" sx={{ mb: 1 }}>Preview:</Typography>
-                <Box 
-                  component="img" 
-                  src={formData.logo} 
-                  sx={{ maxHeight: 60, objectFit: 'contain' }}
-                  onError={(e: any) => { e.target.style.display = 'none'; }}
-                />
-              </Box>
-            )}
+            <Box
+              onClick={() => addInputRef.current?.click()}
+              sx={{
+                border: '2px dashed',
+                borderColor: addPreview
+                  ? 'primary.main'
+                  : isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
+                borderRadius: 2,
+                p: 4,
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+                },
+              }}
+            >
+              {addPreview ? (
+                <Box>
+                  <Box
+                    component="img"
+                    src={addPreview}
+                    sx={{ maxHeight: 80, maxWidth: '100%', objectFit: 'contain', mb: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {addFile?.name} — Click to change
+                  </Typography>
+                </Box>
+              ) : (
+                <Box>
+                  <CloudUploadIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Click to upload brand logo
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    PNG, JPG, SVG, or WEBP
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={saving || !formData.logo.trim()}>
-            {saving ? 'Saving...' : 'Save'}
+          <Button onClick={handleSave} variant="contained" disabled={saving || !addFile}>
+            {saving ? 'Uploading...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -23,12 +23,12 @@ const publicSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Skynet Jet Dashboard",
+  title: "Mason Amelia Dashboard",
   description: "Dashboard",
   icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/avatar.svg',
+    shortcut: '/avatar.svg',
+    apple: '/avatar.svg',
   },
 };
 

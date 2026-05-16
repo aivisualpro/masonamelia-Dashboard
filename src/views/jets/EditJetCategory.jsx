@@ -55,7 +55,7 @@ export default function EditJetCategory() {
       if (response?.success) {
         setSnack({ open: true, severity: 'success', msg: 'Aircraft Category updated successfully' });
         reset();
-        navigate('/jets-categories');
+        navigate('/make');
       }
     } catch (e) {
       setSnack({ open: true, severity: 'error', msg: e.message });

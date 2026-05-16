@@ -19,13 +19,13 @@ import {
   CircularProgress
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import CloseIcon from '@mui/icons-material/Close';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useRouter } from 'next/navigation';
 import { purple } from '@mui/material/colors';
 import AddAircraftModal from './AddAircraftModal';
@@ -41,6 +41,7 @@ interface AircraftDoc {
   _id?: string;
   id?: string;
   title?: string;
+  model?: string;
   year?: number | string;
   price?: number | string;
   status?: string;
@@ -65,6 +66,7 @@ interface AircraftRow {
   image: string;
   images: string[];
   title: string;
+  model: string;
   year: number | null;
   price: number | string | null;
   status: string;
@@ -81,6 +83,9 @@ interface AircraftRow {
   };
   _raw: AircraftDoc;
 }
+
+type SortKey = 'title' | 'model' | 'year' | 'price' | 'status' | 'category' | 'airframe' | 'location';
+type SortDir = 'asc' | 'desc';
 
 interface ConfirmState {
   open: boolean;
@@ -300,6 +305,8 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
   const [deleting, setDeleting] = React.useState(false);
   const [carousel, setCarousel] = React.useState<CarouselState>({ open: false, images: [], currentIndex: 0, title: '' });
   const [visibleCount, setVisibleCount] = React.useState(20);
+  const [sortKey, setSortKey] = React.useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = React.useState<SortDir>('asc');
   const sentinelRef = React.useRef<HTMLDivElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -353,6 +360,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
         image: d.featuredImage || '',
         images: allImages,
         title: d.title ?? '',
+        model: d.model || d.title || '',
         year: toNum(d.year),
         price: d.price ? toNum(d.price) : 'Call',
         status: d.status ?? '',
@@ -372,8 +380,65 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     });
   }, [aircrafts]);
 
-  const visibleRows = React.useMemo(() => rows.slice(0, visibleCount), [rows, visibleCount]);
-  const hasMore = visibleCount < rows.length;
+  // Sorting logic
+  const sortedRows = React.useMemo(() => {
+    if (!sortKey) return rows;
+    const sorted = [...rows].sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+      switch (sortKey) {
+        case 'title':
+          aVal = (a.title || '').toLowerCase();
+          bVal = (b.title || '').toLowerCase();
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        case 'year':
+          aVal = a.year ?? 0;
+          bVal = b.year ?? 0;
+          return aVal - bVal;
+        case 'price':
+          aVal = typeof a.price === 'number' ? a.price : Infinity;
+          bVal = typeof b.price === 'number' ? b.price : Infinity;
+          return aVal - bVal;
+        case 'status':
+          aVal = (a.status || '').toLowerCase();
+          bVal = (b.status || '').toLowerCase();
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        case 'model':
+          aVal = (a.model || '').toLowerCase();
+          bVal = (b.model || '').toLowerCase();
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        case 'category':
+          aVal = (a.category || '').toLowerCase();
+          bVal = (b.category || '').toLowerCase();
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        case 'airframe':
+          aVal = (a.airframe || '').toLowerCase();
+          bVal = (b.airframe || '').toLowerCase();
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        case 'location':
+          aVal = (a.location || '').toLowerCase();
+          bVal = (b.location || '').toLowerCase();
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        default:
+          return 0;
+      }
+    });
+    return sortDir === 'desc' ? sorted.reverse() : sorted;
+  }, [rows, sortKey, sortDir]);
+
+  const handleSort = React.useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return key;
+      }
+      setSortDir('asc');
+      return key;
+    });
+  }, []);
+
+  const visibleRows = React.useMemo(() => sortedRows.slice(0, visibleCount), [sortedRows, visibleCount]);
+  const hasMore = visibleCount < sortedRows.length;
 
   // Infinite scroll via IntersectionObserver
   React.useEffect(() => {
@@ -465,28 +530,54 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10 }}>Title</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 88 }}>Image</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 70 }}>Year</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Price</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 120 }}>Status</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Category</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Airframe</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 110 }}>Engine</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 160 }}>Location</th>
-                <th style={{ ...thStyle, position: 'sticky', top: 0, zIndex: 10, width: 100 }}>Actions</th>
+                {[
+                  { key: 'title' as SortKey, label: 'Title', width: undefined },
+                  { key: null, label: 'Image', width: 88 },
+                  { key: 'year' as SortKey, label: 'Year', width: 70 },
+                  { key: 'price' as SortKey, label: 'Price', width: 110 },
+                  { key: 'status' as SortKey, label: 'Status', width: 120 },
+                  { key: 'category' as SortKey, label: 'Make', width: 110 },
+                  { key: 'model' as SortKey, label: 'Model', width: 130 },
+                  { key: 'airframe' as SortKey, label: 'Airframe', width: 110 },
+                  { key: null, label: 'Engine', width: 110 },
+                  { key: 'location' as SortKey, label: 'Location', width: 160 },
+                  { key: null, label: 'Actions', width: 100 },
+                ].map((col, ci) => (
+                  <th
+                    key={ci}
+                    style={{
+                      ...thStyle,
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 10,
+                      width: col.width,
+                      cursor: col.key ? 'pointer' : 'default',
+                      userSelect: 'none',
+                    }}
+                    onClick={col.key ? () => handleSort(col.key!) : undefined}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {col.label}
+                      {col.key && sortKey === col.key && (
+                        sortDir === 'asc'
+                          ? <ArrowUpwardIcon sx={{ fontSize: 14, opacity: 0.7 }} />
+                          : <ArrowDownwardIcon sx={{ fontSize: 14, opacity: 0.7 }} />
+                      )}
+                    </span>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none' }}>
+                  <td colSpan={11} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none' }}>
                     <CircularProgress size={28} />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none', color: theme.palette.text.secondary }}>
+                  <td colSpan={11} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none', color: theme.palette.text.secondary }}>
                     No aircraft found.
                   </td>
                 </tr>
@@ -500,7 +591,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
                   >
                     <td
                       style={{ ...tdStyle, fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => router.push(`/jets/edit/${row.id}`)}
+                      onClick={() => router.push(`/aircrafts/edit/${row.id}`)}
                     >{row.title}</td>
                     <td style={{ ...tdStyle, padding: '6px 16px', width: 88 }}>
                       {row.image ? (
@@ -527,7 +618,8 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
                     <td style={{ ...tdStyle, width: 70 }}>{row.year || '—'}</td>
                     <td style={{ ...tdStyle, width: 110 }}>{row.price && row.price !== 'Call' ? `$${numberFmt.format(Number(row.price))}` : 'Call'}</td>
                     <td style={{ ...tdStyle, width: 120 }}><StatusPill value={row.status} /></td>
-                    <td style={{ ...tdStyle, width: 110 }}>{row.category || '—'}</td>
+                    <td style={{ ...tdStyle, width: 110 }}>{row.category || '—'}</td> {/* Make */}
+                    <td style={{ ...tdStyle, width: 130 }}>{row.model || '—'}</td>
                     <td style={{ ...tdStyle, width: 110 }}>{row.airframe || '—'}</td>
                     <td style={{ ...tdStyle, width: 110 }}>{row.engine || '—'}</td>
                     <td style={{ ...tdStyle, width: 160 }}>{row.location || '—'}</td>
@@ -570,7 +662,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
             color: theme.palette.text.secondary,
           }}>
             <span>
-              Showing <strong style={{ color: theme.palette.text.primary }}>{visibleRows.length}</strong> of <strong style={{ color: theme.palette.text.primary }}>{rows.length}</strong> aircraft
+              Showing <strong style={{ color: theme.palette.text.primary }}>{visibleRows.length}</strong> of <strong style={{ color: theme.palette.text.primary }}>{sortedRows.length}</strong> aircraft
             </span>
             {hasMore && (
               <span style={{ fontSize: 12, opacity: 0.6 }}>Scroll down to load more</span>

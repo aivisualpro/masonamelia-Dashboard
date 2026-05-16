@@ -190,7 +190,7 @@ export default function AddJet() {
       setImages([]);
       removeFeatured();
       SECTION_KEYS.forEach((k) => setValue(`sections.${k}`, ''));
-      navigate('/jets');
+      navigate('/aircrafts');
     } catch (e) {
       setSnack({ open: true, severity: 'error', msg: e.message });
     } finally {
@@ -236,7 +236,7 @@ export default function AddJet() {
               <TextField label="Price" fullWidth required {...register('price', { required: true })} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField select label="Categories" fullWidth {...register('category')}>
+              <TextField select label="Make" fullWidth {...register('category')}>
                 {categories?.map((s) => (
                   <MenuItem key={s?._id} value={s?._id}>
                     {s?.name}

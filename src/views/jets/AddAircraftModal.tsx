@@ -269,7 +269,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
             error={!!errors.price} helperText={errors.price ? 'Required' : ''} />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <FieldLabel>Category</FieldLabel>
+          <FieldLabel>Make</FieldLabel>
           <TextField select fullWidth size="small" defaultValue="" {...register('category')}>
             <MenuItem value=""><em>None</em></MenuItem>
             {categories.map(c => <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>)}

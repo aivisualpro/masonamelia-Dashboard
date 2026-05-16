@@ -43,7 +43,7 @@ export default function AddAircraftCategory() {
       if (response?.success) {
         setSnack({ open: true, severity: 'success', msg: 'Aircraft Category created successfully' });
         reset();
-        navigate('/jets-categories');
+        navigate('/make');
       }
     } catch (e) {
       setSnack({ open: true, severity: 'error', msg: e.message });
