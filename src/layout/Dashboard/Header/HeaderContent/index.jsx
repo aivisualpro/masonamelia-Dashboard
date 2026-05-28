@@ -42,9 +42,9 @@ export default function HeaderContent() {
   };
 
   // Route-specific action buttons
-  const showAddAircraft = pathname === '/aircrafts';
+  const showAddAircraft = pathname === '/aircraft';
   const showAddCategory = pathname === '/make';
-  const showBack = pathname.startsWith('/aircrafts/edit') || pathname.startsWith('/aircrafts/add');
+  const showBack = pathname.startsWith('/aircraft/edit') || pathname.startsWith('/aircraft/add');
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -52,7 +52,7 @@ export default function HeaderContent() {
       {/* Back button on detail pages */}
       {showBack && (
         <IconButton
-          onClick={() => router.push('/aircrafts')}
+          onClick={() => router.push('/aircraft')}
           size="small"
           sx={{
             border: `1px solid ${theme.palette.divider}`,
@@ -91,8 +91,8 @@ export default function HeaderContent() {
         </Button>
       )}
 
-      {/* Route-specific: Add Brand only on /brands */}
-      {pathname === '/brands' && (
+      {/* Route-specific: Add Brand only on /logo-ticker */}
+      {pathname === '/logo-ticker' && (
         <Button
           variant="contained"
           color="primary"
@@ -104,8 +104,8 @@ export default function HeaderContent() {
         </Button>
       )}
 
-      {/* Route-specific: Add Member only on /teams */}
-      {pathname === '/teams' && (
+      {/* Route-specific: Add Member only on /team */}
+      {pathname === '/team' && (
         <Button
           variant="contained"
           color="primary"

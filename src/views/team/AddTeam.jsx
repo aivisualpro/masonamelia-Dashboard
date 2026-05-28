@@ -109,7 +109,7 @@ export default function AddTeam() {
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         setPreviewUrl('');
         setImage(null);
-        navigate('/teams');
+        navigate('/team');
       } else {
         setSnack({
           open: true,

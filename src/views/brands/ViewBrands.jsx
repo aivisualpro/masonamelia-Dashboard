@@ -116,7 +116,7 @@ const ViewBrands = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5} alignItems="center">
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => navigate(`/brands/edit/${params.row.id}`)}>
+            <IconButton size="small" onClick={() => navigate(`/logo-ticker/edit/${params.row.id}`)}> 
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -148,7 +148,7 @@ const ViewBrands = () => {
               Delete Selected ({selection.length})
             </Button>
           )}
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/brands/add")}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/logo-ticker/add")}>
             Add Brand
           </Button>
         </div>

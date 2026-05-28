@@ -190,7 +190,7 @@ export default function AddJet() {
       setImages([]);
       removeFeatured();
       SECTION_KEYS.forEach((k) => setValue(`sections.${k}`, ''));
-      navigate('/aircrafts');
+      navigate('/aircraft');
     } catch (e) {
       setSnack({ open: true, severity: 'error', msg: e.message });
     } finally {

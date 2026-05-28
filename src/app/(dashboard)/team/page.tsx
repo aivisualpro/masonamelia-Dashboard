@@ -243,47 +243,51 @@ export default function TeamsPage() {
                 >
                   {/* Profile Picture */}
                   <Box sx={{ p: 2, pb: 0 }}>
-                    <Box sx={{
-                      position: 'relative',
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      borderRadius: 1,
-                      border: `1px solid ${theme.palette.divider}`,
-                      overflow: 'hidden',
-                    }}>
-                      {isEditing && editPicFile ? (
-                        <img
-                          src={URL.createObjectURL(editPicFile)}
-                          alt={m.name}
-                          style={{ width: '100%', display: 'block', objectFit: 'contain', maxHeight: 260, borderRadius: 8 }}
-                        />
-                      ) : (
-                        <Image
-                          src={optimizeCloudinaryUrl(m.profile_picture || 'https://placehold.co/400x300?text=No+Image')}
-                          alt={m.name}
-                          width={400}
-                          height={300}
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          style={{ width: '100%', display: 'block', objectFit: 'contain', maxHeight: 260, borderRadius: 8 }}
-                          onError={(e: any) => { e.target.src = 'https://placehold.co/400x300?text=No+Image'; }}
-                        />
+                    {/* Outer wrapper with position:relative so the absolute button renders correctly */}
+                    <Box sx={{ position: 'relative' }}>
+                      <Box sx={{
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                        borderRadius: 1,
+                        border: `1px solid ${theme.palette.divider}`,
+                        overflow: 'hidden',
+                      }}>
+                        {isEditing && editPicFile ? (
+                          <img
+                            src={URL.createObjectURL(editPicFile)}
+                            alt={m.name}
+                            style={{ width: '100%', display: 'block', objectFit: 'contain', maxHeight: 260, borderRadius: 8 }}
+                          />
+                        ) : (
+                          <Image
+                            src={optimizeCloudinaryUrl(m.profile_picture || 'https://placehold.co/400x300?text=No+Image')}
+                            alt={m.name}
+                            width={400}
+                            height={300}
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            style={{ width: '100%', display: 'block', objectFit: 'contain', maxHeight: 260, borderRadius: 8 }}
+                            onError={(e: any) => { e.target.src = 'https://placehold.co/400x300?text=No+Image'; }}
+                          />
+                        )}
+                      </Box>
+                      {/* Change Photo button sits OUTSIDE overflow:hidden so it is never clipped */}
+                      {isEditing && (
+                        <Button
+                          component="label"
+                          variant="contained"
+                          size="small"
+                          startIcon={<UploadIcon />}
+                          sx={{
+                            position: 'absolute', bottom: 8, right: 8,
+                            textTransform: 'none', fontSize: 12, borderRadius: 1,
+                            backgroundColor: theme.palette.primary.main, '&:hover': { backgroundColor: theme.palette.primary.dark },
+                            zIndex: 1,
+                          }}
+                        >
+                          Change Photo
+                          <input ref={editPicRef} hidden accept="image/*" type="file"
+                            onChange={(e) => setEditPicFile(e.target.files?.[0] || null)} />
+                        </Button>
                       )}
-                    {isEditing && (
-                      <Button
-                        component="label"
-                        variant="contained"
-                        size="small"
-                        startIcon={<UploadIcon />}
-                        sx={{
-                          position: 'absolute', bottom: 8, right: 8,
-                          textTransform: 'none', fontSize: 12, borderRadius: 1,
-                          backgroundColor: 'rgba(0,0,0,0.65)', '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
-                        }}
-                      >
-                        Change Photo
-                        <input ref={editPicRef} hidden accept="image/*" type="file"
-                          onChange={(e) => setEditPicFile(e.target.files?.[0] || null)} />
-                      </Button>
-                    )}
                     </Box>
                   </Box>
 

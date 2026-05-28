@@ -365,7 +365,7 @@ export default function EditJet({ id }: EditJetProps) {
       // Redirect after success
       if (typeof window !== 'undefined') {
         setTimeout(() => {
-          window.location.href = '/aircrafts';
+          window.location.href = '/aircraft';
         }, 700);
       }
     } catch (e) {

@@ -162,7 +162,7 @@ export default function EditTeam() {
 
       if (res?.success) {
         setSnack({ open: true, severity: 'success', msg: 'Team member updated successfully' });
-        navigate('/teams');
+        navigate('/team');
       } else {
         setSnack({ open: true, severity: 'error', msg: res?.message || 'Update failed' });
       }

@@ -10,15 +10,15 @@ const icons = {
 // ==============================|| MENU ITEMS - UTILITIES ||============================== //
 
 const utilities = {
-  id: 'aircrafts',
-  title: 'Aircrafts',
+  id: 'aircraft',
+  title: 'Aircraft',
   type: 'group',
   children: [
     {
-      id: 'aircrafts',
-      title: 'Aircrafts',
+      id: 'aircraft',
+      title: 'Aircraft',
       type: 'item',
-      url: '/aircrafts',
+      url: '/aircraft',
       icon: icons.AirplanemodeActiveIcon
     },
     {

@@ -591,7 +591,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
                   >
                     <td
                       style={{ ...tdStyle, fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => router.push(`/aircrafts/edit/${row.id}`)}
+                      onClick={() => router.push(`/aircraft/edit/${row.id}`)}
                     >{row.title}</td>
                     <td style={{ ...tdStyle, padding: '6px 16px', width: 88 }}>
                       {row.image ? (

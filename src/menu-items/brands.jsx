@@ -8,15 +8,15 @@ const icons = {
 // ==============================|| MENU ITEMS - UTILITIES ||============================== //
 
 const brands = {
-    id: 'brands',
-    title: 'Brands',
+    id: 'logo-ticker',
+    title: 'Logo Ticker',
     type: 'group',
     children: [
         {
-            id: 'brands',
-            title: 'Brands',
+            id: 'logo-ticker',
+            title: 'Logo Ticker',
             type: 'item',
-            url: '/brands',
+            url: '/logo-ticker',
             icon: icons.PhotoLibraryIcon
         }
     ]

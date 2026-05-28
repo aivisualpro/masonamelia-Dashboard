@@ -8,15 +8,15 @@ const icons = {
 // ==============================|| MENU ITEMS - UTILITIES ||============================== //
 
 const teams = {
-    id: 'teams',
-    title: 'Teams',
+    id: 'team',
+    title: 'Team',
     type: 'group',
     children: [
         {
-            id: 'teams',
-            title: 'Teams',
+            id: 'team',
+            title: 'Team',
             type: 'item',
-            url: '/teams',
+            url: '/team',
             icon: icons.GroupsIcon
         }
     ]

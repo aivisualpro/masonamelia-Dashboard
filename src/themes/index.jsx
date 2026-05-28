@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { useMemo, useState, createContext, useEffect } from 'react';
 
 // material-ui
-import StyledEngineProvider from '@mui/material/StyledEngineProvider';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -81,12 +80,10 @@ export default function ThemeCustomization({ children }) {
 
   return (
     <ThemeModeContext.Provider value={{ mode, toggleMode }}>
-      <StyledEngineProvider injectFirst>
-        <ThemeProvider theme={themes}>
-          <CssBaseline enableColorScheme />
-          {children}
-        </ThemeProvider>
-      </StyledEngineProvider>
+      <ThemeProvider theme={themes}>
+        <CssBaseline enableColorScheme />
+        {children}
+      </ThemeProvider>
     </ThemeModeContext.Provider>
   );
 }

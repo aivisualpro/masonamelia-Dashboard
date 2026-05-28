@@ -27,18 +27,18 @@ export default function Header() {
   const theme = useTheme();
 
   // Show back button on detail/edit pages
-  const showBack = pathname.startsWith('/aircrafts/edit') || pathname.startsWith('/aircrafts/add');
+  const showBack = pathname.startsWith('/aircraft/edit') || pathname.startsWith('/aircraft/add');
 
   // header content
   const headerContent = useMemo(() => <HeaderContent />, []);
 
   const navLinks = [
-    { title: 'Aircrafts', path: '/aircrafts' },
+    { title: 'Aircraft', path: '/aircraft' },
     { title: 'Make', path: '/make' },
-    { title: 'Brands', path: '/brands' },
-    { title: 'Teams', path: '/teams' },
+    { title: 'Team', path: '/team' },
     { title: 'Testimonials', path: '/testimonials' },
-    { title: 'Contact Info', path: '/contact-info' }
+    { title: 'Contact Info', path: '/contact-info' },
+    { title: 'Logo Ticker', path: '/logo-ticker' },
   ];
 
   const mainHeader = (

@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={publicSans.variable} style={{ height: '100%', overflow: 'hidden' }}>
       <body suppressHydrationWarning style={{ height: '100%', overflow: 'hidden', margin: 0 }}>
-        <AppRouterCacheProvider>
+        <AppRouterCacheProvider options={{ key: 'mui', enableCssLayer: false }}>
           <ThemeCustomization>
             <SWRProvider>
               <ScrollTop>

@@ -59,7 +59,7 @@ const EditBrand = () => {
                 setSnack({ open: true, severity: "success", msg: "Brand updated successfully" });
                 setUploading(false);
                 setTimeout(() => {
-                    navigate("/brands");
+                    navigate("/logo-ticker");
                 }, 700);
             }
         } catch (error) {

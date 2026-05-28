@@ -174,7 +174,7 @@ const ViewTeam = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5} alignItems="center">
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => navigate(`/teams/edit/${params.row.id}`)}>
+            <IconButton size="small" onClick={() => navigate(`/team/edit/${params.row.id}`)}> 
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -206,7 +206,7 @@ const ViewTeam = () => {
               Delete Selected ({selection.length})
             </Button>
           )}
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/teams/add")}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/team/add")}>
             Add Teams
           </Button>
         </div>
