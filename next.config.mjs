@@ -24,6 +24,9 @@ const nextConfig = {
 
   // ─── Experimental optimizations ──────────────────────────────────────
   experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
     optimizePackageImports: [
       '@mui/material',
       '@mui/icons-material',

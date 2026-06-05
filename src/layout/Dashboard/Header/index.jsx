@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,12 +8,17 @@ import { usePathname, useRouter } from 'next/navigation';
 // material-ui
 import useMediaQuery from '@mui/material/useMediaQuery';
 import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
 import { useTheme } from '@mui/material/styles';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 
 // project imports
 import HeaderContent from './HeaderContent';
@@ -25,9 +30,11 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
-  // Show back button on detail/edit pages
-  const showBack = pathname.startsWith('/aircraft/edit') || pathname.startsWith('/aircraft/add');
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const toggleMobile = useCallback(() => setMobileOpen((prev) => !prev), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   // header content
   const headerContent = useMemo(() => <HeaderContent />, []);
@@ -44,8 +51,30 @@ export default function Header() {
   const mainHeader = (
     <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, px: 2 }}>
 
-      {/* Left: Logo with hover swap */}
-      <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, zIndex: 1 }}>
+      {/* Left: Burger (mobile) + Logo */}
+      <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, zIndex: 1, gap: 1 }}>
+        {/* Burger menu — visible only on mobile/tablet */}
+        {downLG && (
+          <IconButton
+            onClick={toggleMobile}
+            size="small"
+            aria-label="open navigation menu"
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 1,
+              border: `1px solid ${theme.palette.divider}`,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+              '&:hover': {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+              },
+            }}
+          >
+            <MenuIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        )}
+
+        {/* Logo with hover swap */}
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center' }}>
           <Box
             sx={{
@@ -96,7 +125,7 @@ export default function Header() {
         </Link>
       </Box>
 
-      {/* Center: Nav — absolutely centered */}
+      {/* Center: Nav — absolutely centered (desktop only) */}
       {!downLG && (
         <Box sx={{
           position: 'absolute',
@@ -163,23 +192,118 @@ export default function Header() {
     </Box>
   );
 
-
   return (
-    <AppBar 
-      position="static"
-      color="inherit"
-      elevation={0}
-      sx={{
-        borderBottom: '1px solid',
-        borderBottomColor: 'divider',
-        backgroundColor: 'background.paper',
-        borderRadius: 2,
-        flexShrink: 0,
-        mb: 2,
-      }}
-    >
-      {mainHeader}
-    </AppBar>
+    <>
+      <AppBar 
+        position="static"
+        color="inherit"
+        elevation={0}
+        sx={{
+          borderBottom: '1px solid',
+          borderBottomColor: 'divider',
+          backgroundColor: 'background.paper',
+          borderRadius: 2,
+          flexShrink: 0,
+          mb: 2,
+        }}
+      >
+        {mainHeader}
+      </AppBar>
+
+      {/* ── Mobile Navigation Drawer ── */}
+      <Drawer
+        anchor="left"
+        open={mobileOpen}
+        onClose={closeMobile}
+        ModalProps={{ keepMounted: true }}
+        PaperProps={{
+          sx: {
+            width: 280,
+            backgroundColor: theme.palette.background.paper,
+            backgroundImage: 'none',
+            borderRight: `1px solid ${theme.palette.divider}`,
+          },
+        }}
+      >
+        {/* Drawer Header */}
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 2,
+          py: 1.5,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}>
+          <Link href="/dashboard" onClick={closeMobile} style={{ display: 'flex', alignItems: 'center' }}>
+            <Image
+              src={isDark ? '/logowhite.svg' : '/logo.svg'}
+              alt="Mason Amelia"
+              width={100}
+              height={30}
+              style={{ height: 30, width: 'auto' }}
+            />
+          </Link>
+          <IconButton onClick={closeMobile} size="small" aria-label="close menu">
+            <CloseIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Box>
+
+        {/* Navigation Links */}
+        <List sx={{ pt: 1, px: 1 }}>
+          {navLinks.map((link) => {
+            const isActive = pathname === link.path || pathname.startsWith(link.path + '/');
+            return (
+              <ListItemButton
+                key={link.title}
+                component={Link}
+                href={link.path}
+                onClick={closeMobile}
+                selected={isActive}
+                sx={{
+                  borderRadius: 1.5,
+                  mb: 0.5,
+                  py: 1,
+                  px: 2,
+                  transition: 'all 0.15s ease',
+                  '&.Mui-selected': {
+                    backgroundColor: isDark
+                      ? 'rgba(var(--mui-palette-primary-mainChannel) / 0.12)'
+                      : 'rgba(var(--mui-palette-primary-mainChannel) / 0.08)',
+                    '&:hover': {
+                      backgroundColor: isDark
+                        ? 'rgba(var(--mui-palette-primary-mainChannel) / 0.18)'
+                        : 'rgba(var(--mui-palette-primary-mainChannel) / 0.14)',
+                    },
+                  },
+                  '&:hover': {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  },
+                }}
+              >
+                <ListItemText
+                  primary={link.title}
+                  primaryTypographyProps={{
+                    fontSize: '0.9rem',
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? 'primary.main' : 'text.primary',
+                  }}
+                />
+                {isActive && (
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 20,
+                      borderRadius: 2,
+                      bgcolor: 'primary.main',
+                      ml: 1,
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            );
+          })}
+        </List>
+      </Drawer>
+    </>
   );
 }
-
