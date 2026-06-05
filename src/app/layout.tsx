@@ -40,6 +40,19 @@ export default function RootLayout({
   return (
     <html lang="en" className={publicSans.variable} style={{ height: '100%', overflow: 'hidden' }}>
       <body suppressHydrationWarning style={{ height: '100%', overflow: 'hidden', margin: 0 }}>
+        {/* Force-kill any stale service workers that break asset loading */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          if('serviceWorker' in navigator){
+            navigator.serviceWorker.getRegistrations().then(function(regs){
+              regs.forEach(function(r){r.unregister()});
+            });
+            if(typeof caches!=='undefined'){
+              caches.keys().then(function(names){
+                names.forEach(function(n){caches.delete(n)});
+              });
+            }
+          }
+        `}} />
         <AppRouterCacheProvider options={{ key: 'mui', enableCssLayer: false }}>
           <ThemeCustomization>
             <SWRProvider>

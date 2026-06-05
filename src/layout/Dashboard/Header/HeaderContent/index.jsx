@@ -130,8 +130,8 @@ export default function HeaderContent() {
         </Button>
       )}
 
-      {/* Route-specific: Save Changes only on /contact-info */}
-      {pathname === '/contact-info' && (
+      {/* Route-specific: Save Changes on /content (contact tab) */}
+      {pathname.startsWith('/content') && (
         <Button
           variant="contained"
           color="primary"

@@ -42,9 +42,7 @@ export default function Header() {
   const navLinks = [
     { title: 'Aircraft', path: '/aircraft' },
     { title: 'Make', path: '/make' },
-    { title: 'Team', path: '/team' },
-    { title: 'Testimonials', path: '/testimonials' },
-    { title: 'Contact Info', path: '/contact-info' },
+    { title: 'Content', path: '/content' },
     { title: 'Logo Ticker', path: '/logo-ticker' },
   ];
 
