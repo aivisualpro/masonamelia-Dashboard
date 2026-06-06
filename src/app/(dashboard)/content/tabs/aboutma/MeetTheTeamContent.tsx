@@ -33,6 +33,7 @@ import axios from 'axios';
 import Image from 'next/image';
 import { useTeams, useContact } from '@/api/hooks';
 import { optimizeCloudinaryUrl } from '@/utils/cloudinary';
+import { compressImage } from '@/utils/compressImage';
 import SaveIcon from '@mui/icons-material/Save';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
@@ -161,9 +162,10 @@ export default function MeetTheTeamContent() {
     try {
       let profilePic = formData.profile_picture;
       if (addPicFile) {
-        // Upload via our upload endpoint
+        // Compress before uploading to reduce transfer time
+        const compressed = await compressImage(addPicFile);
         const fd = new FormData();
-        fd.append('file', addPicFile);
+        fd.append('file', compressed);
         const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -199,8 +201,10 @@ export default function MeetTheTeamContent() {
     try {
       let profilePic = editForm.profile_picture;
       if (editPicFile) {
+        // Compress before uploading to reduce transfer time
+        const compressed = await compressImage(editPicFile);
         const fd = new FormData();
-        fd.append('file', editPicFile);
+        fd.append('file', compressed);
         const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -287,9 +291,11 @@ export default function MeetTheTeamContent() {
                 onChange={async (e) => {
                   const file = (e.target as HTMLInputElement).files?.[0];
                   if (!file) return;
-                  const fd = new FormData();
-                  fd.append('file', file);
                   try {
+                    // Compress before uploading — hero images can be larger
+                    const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1080 });
+                    const fd = new FormData();
+                    fd.append('file', compressed);
                     const res = await axios.post('/api/upload', fd);
                     if (res.data?.url) {
                       setHeroBgImage(res.data.url);

@@ -74,6 +74,14 @@ export default function BrokerageContent() {
   const [relSubtitle, setRelSubtitle] = React.useState(DEFAULTS.relationship_subtitle);
   const [relImage, setRelImage] = React.useState('');
 
+  // ── CTA Banner ──
+  const [ctaLine1White, setCtaLine1White] = React.useState('Data informs');
+  const [ctaLine1Blue, setCtaLine1Blue] = React.useState('decisions.');
+  const [ctaLine2White, setCtaLine2White] = React.useState('Exposure creates');
+  const [ctaLine2Blue, setCtaLine2Blue] = React.useState('opportunity.');
+  const [ctaLine3White, setCtaLine3White] = React.useState('Execution delivers');
+  const [ctaLine3Blue, setCtaLine3Blue] = React.useState('results.');
+
   const [saving, setSaving] = React.useState(false);
   const [notification, setNotification] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -102,6 +110,13 @@ export default function BrokerageContent() {
     setRelTitle(c[`${P}_relationship_title`] || DEFAULTS.relationship_title);
     setRelSubtitle(c[`${P}_relationship_subtitle`] || DEFAULTS.relationship_subtitle);
     setRelImage(c[`${P}_relationship_image`] || '');
+
+    setCtaLine1White(c[`${P}_cta_line1_white`] || 'Data informs');
+    setCtaLine1Blue(c[`${P}_cta_line1_blue`] || 'decisions.');
+    setCtaLine2White(c[`${P}_cta_line2_white`] || 'Exposure creates');
+    setCtaLine2Blue(c[`${P}_cta_line2_blue`] || 'opportunity.');
+    setCtaLine3White(c[`${P}_cta_line3_white`] || 'Execution delivers');
+    setCtaLine3Blue(c[`${P}_cta_line3_blue`] || 'results.');
   }, [contact]);
 
   // ── Save ──
@@ -131,6 +146,12 @@ export default function BrokerageContent() {
         [`${P}_relationship_title`]: relTitle,
         [`${P}_relationship_subtitle`]: relSubtitle,
         [`${P}_relationship_image`]: relImage,
+        [`${P}_cta_line1_white`]: ctaLine1White,
+        [`${P}_cta_line1_blue`]: ctaLine1Blue,
+        [`${P}_cta_line2_white`]: ctaLine2White,
+        [`${P}_cta_line2_blue`]: ctaLine2Blue,
+        [`${P}_cta_line3_white`]: ctaLine3White,
+        [`${P}_cta_line3_blue`]: ctaLine3Blue,
       });
       mutateContact();
       setNotification({ message: 'Brokerage page saved', type: 'success' });
@@ -306,6 +327,53 @@ export default function BrokerageContent() {
               </Box>
               {uploadBtn('brk-rel-img', (e) => upload(e, setRelImage), 'Change Image')}
             </Box>
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* ─── 6. CTA BANNER ─── */}
+      <Paper elevation={0} sx={{ p: 0, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.paper, mb: 2, overflow: 'hidden' }}>
+        <Box sx={toolbarSx}>
+          {sectionLabel('CTA Banner · Brokerage Page', '3 lines — white text with blue highlight word')}
+        </Box>
+        <Box sx={{ backgroundColor: '#111218', px: 4, py: 5 }}>
+          {/* Live Preview */}
+          <Box sx={{ textAlign: 'center', mb: 4, py: 4, borderRadius: 3, background: 'linear-gradient(135deg, #16171d 0%, #1a1b22 50%, #16171d 100%)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            {[{ w: ctaLine1White, b: ctaLine1Blue }, { w: ctaLine2White, b: ctaLine2Blue }, { w: ctaLine3White, b: ctaLine3Blue }].map((line, i) => (
+              <Box key={i} sx={{ fontSize: { xs: '1.4rem', md: '2rem' }, fontWeight: 700, lineHeight: 1.4, fontStyle: 'italic', color: '#fff' }}>
+                {line.w}{' '}<span style={{ color: '#268AE0' }}>{line.b}</span>
+              </Box>
+            ))}
+            <Box sx={{ mt: 3 }}>
+              <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, px: 2.5, py: 1, borderRadius: 99, border: '1.5px solid rgba(255,255,255,0.7)', color: '#fff', fontSize: 14, fontWeight: 500 }}>
+                Contact Us <span style={{ fontSize: 16 }}>↗</span>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Editor Fields */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[
+              { label: 'Line 1', white: ctaLine1White, setWhite: setCtaLine1White, blue: ctaLine1Blue, setBlue: setCtaLine1Blue },
+              { label: 'Line 2', white: ctaLine2White, setWhite: setCtaLine2White, blue: ctaLine2Blue, setBlue: setCtaLine2Blue },
+              { label: 'Line 3', white: ctaLine3White, setWhite: setCtaLine3White, blue: ctaLine3Blue, setBlue: setCtaLine3Blue },
+            ].map((line) => (
+              <Box key={line.label} sx={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr', gap: 1.5, alignItems: 'center' }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{line.label}</Typography>
+                <TextField
+                  fullWidth size="small" placeholder="White text" value={line.white}
+                  onChange={(e) => line.setWhite(e.target.value)}
+                  inputProps={{ style: { color: '#fff', fontSize: 14 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' } } }}
+                />
+                <TextField
+                  fullWidth size="small" placeholder="Blue text" value={line.blue}
+                  onChange={(e) => line.setBlue(e.target.value)}
+                  inputProps={{ style: { color: '#268AE0', fontSize: 14, fontWeight: 600 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(38,138,224,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(38,138,224,0.5)' } } }}
+                />
+              </Box>
+            ))}
           </Box>
         </Box>
       </Paper>

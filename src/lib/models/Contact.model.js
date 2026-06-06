@@ -232,6 +232,20 @@ const contactSchema = new mongoose.Schema({
     brokerage_relationship_title: { type: String, default: 'Relationships for Life' },
     brokerage_relationship_subtitle: { type: String, default: "This isn't transactional. This is a life-long friendship." },
     brokerage_relationship_image: { type: String, default: '' },
+    // ── Acquisition: CTA Banner ──
+    acquisition_cta_line1_white: { type: String, default: 'Data informs' },
+    acquisition_cta_line1_blue: { type: String, default: 'decisions.' },
+    acquisition_cta_line2_white: { type: String, default: 'Relationships create' },
+    acquisition_cta_line2_blue: { type: String, default: 'opportunity.' },
+    acquisition_cta_line3_white: { type: String, default: 'Execution delivers' },
+    acquisition_cta_line3_blue: { type: String, default: 'results.' },
+    // ── Brokerage: CTA Banner ──
+    brokerage_cta_line1_white: { type: String, default: 'Data informs' },
+    brokerage_cta_line1_blue: { type: String, default: 'decisions.' },
+    brokerage_cta_line2_white: { type: String, default: 'Exposure creates' },
+    brokerage_cta_line2_blue: { type: String, default: 'opportunity.' },
+    brokerage_cta_line3_white: { type: String, default: 'Execution delivers' },
+    brokerage_cta_line3_blue: { type: String, default: 'results.' },
     // ── Insurance page hero ──
     insurance_hero_title_white: { type: String, default: 'Aircraft ' },
     insurance_hero_title_blue: { type: String, default: 'Insurance' },
