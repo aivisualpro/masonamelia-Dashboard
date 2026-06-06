@@ -93,7 +93,7 @@ export default function Header() {
               priority
               style={{
                 height: 36,
-                width: 'auto',
+                width: 120,
                 position: 'absolute',
                 top: 0,
                 left: 0,
@@ -111,7 +111,7 @@ export default function Header() {
               priority
               style={{
                 height: 36,
-                width: 'auto',
+                width: 120,
                 position: 'absolute',
                 top: 0,
                 left: 0,
