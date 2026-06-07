@@ -251,6 +251,51 @@ const contactSchema = new mongoose.Schema({
     insurance_hero_title_blue: { type: String, default: 'Insurance' },
     insurance_hero_description: { type: String, default: 'Our trusted partners at Titan Insurance specialize exclusively in high-end owner-flown piston and turbine aircraft, backed by decades of aviation insurance expertise. Get a tailored quote today.' },
     insurance_hero_bg_image: { type: String, default: '' },
+    // ── Showroom page hero ──
+    showroom_hero_title_white: { type: String, default: 'Where Precision' },
+    showroom_hero_title_blue: { type: String, default: 'Meets Passion' },
+    showroom_hero_description: { type: String, default: 'We curate an exclusive collection of high-performance piston and owner-flown turbine aircraft, each one selected to satisfy the most discerning aviators.' },
+    showroom_hero_bg_image: { type: String, default: '' },
+    // ── About page hero ──
+    about_hero_title_white: { type: String, default: 'Redefining ' },
+    about_hero_title_blue: { type: String, default: 'Aircraft Brokerage' },
+    about_hero_description: { type: String, default: 'Built on Trust, Performance, and Relationships That Endure.' },
+    about_hero_bg_image: { type: String, default: '' },
+    // ── About page: What Sets Us Apart ──
+    about_wsa_title_white: { type: String, default: 'Who is ' },
+    about_wsa_title_blue: { type: String, default: 'Mason Amelia?' },
+    about_wsa_subtitle: { type: String, default: 'An aircraft brokerage named after our founder Jesse Adams\' children, focused on high-performance piston and owner-flown turbine aircraft, built on:' },
+    about_wsa_cards: {
+        type: [{
+            title: { type: String },
+            description: { type: String },
+        }],
+        default: [
+            { title: 'Integrity', description: 'When you name a company after your children, you hold yourself to a higher standard. Mason Amelia was built on the belief that every transaction should be a win for both Buyer and Seller. Our greatest sense of accomplishment comes from the repeat clients, referrals, and reputation that follow doing business the right way.' },
+            { title: 'Relationships', description: 'We value relationships over transactions. Loyalty runs deep here : to our clients, our partners, and our friends. Matching the right buyer with the right seller is how we take care of our circle.' },
+            { title: 'Expertise', description: "Confidence isn't a claim, it's a credential. With experience spanning flight instruction, airline, and corporate aviation, we've flown the mission from every seat. That's what makes our methodology an industry benchmark." },
+        ],
+    },
+    // ── About page: Timeline ──
+    about_timeline_bg_image: { type: String, default: '' },
+    about_timeline_items: {
+        type: [{
+            year: { type: String },
+            heading: { type: String },
+            description: { type: String },
+        }],
+        default: [
+            { year: '2004', heading: 'Aviation Begins', description: 'After honorable enlisted military service, Jesse began flight training and quickly progressed through CFI, CFII, and MEI ratings.' },
+            { year: '2007–2012', heading: 'Airlines and Entrepreneurship', description: 'Jesse flew regional jets for Republic Airways while simultaneously pursuing entrepreneurial ventures, building discipline as a pro pilot, alongside business acumen.' },
+            { year: '2012–2015', heading: 'Business Foundation', description: 'Jesse joined his brothers at Sagacious Consultants, helping scale the firm to a successful acquisition by Accenture – but never stopped flying.' },
+            { year: '2018', heading: 'Founded', description: 'Initially a spin-off of the Adams brothers\' entrepreneurial success, Mason Amelia was created as a professional services firm and business consultancy. As the company began recruiting for aviation sales organizations, a clear opportunity emerged...' },
+            { year: '2019–2023', heading: 'Brokerage Mastery', description: 'Nearly five years at the world\'s largest Cirrus focused brokerage gave Jesse exposure to high volume global transactions across piston and owner-flown turbine aircraft, completing more than 200 deals.' },
+            { year: '2023', heading: 'Strategic Refocus', description: 'Jesse founded Mason Amelia as a modern aircraft brokerage, combining data, elevated marketing, and grit. Within six months, the first team members were hired and remain core to the firm today.' },
+            { year: '2024', heading: 'Rapid Growth', description: 'Mason Amelia became one of the fastest growing aircraft brokerages in the country, reshaping how owner-flown aircraft are marketed and sold.' },
+            { year: '2025', heading: 'SkyNet Launch', description: 'The launch of SkyNet formalized Mason Amelia\'s data driven valuation approach, bringing greater clarity and precision to the market.' },
+            { year: '2026', heading: 'Looking Forward', description: 'Executing at scale. Growing with intent.' },
+        ],
+    },
 }, { timestamps: true });
 
 contactSchema.index({ createdAt: -1 });

@@ -310,7 +310,10 @@ export default function BrokerageContent() {
 
       {/* ─── 5. RELATIONSHIPS ─── */}
       <Paper elevation={0} sx={{ p: 0, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.paper, mb: 2, overflow: 'hidden' }}>
-        <Box sx={toolbarSx}>{sectionLabel('Relationships Section', 'Click text to edit · Manage image')}</Box>
+        <Box sx={toolbarSx}>
+          {sectionLabel('Relationships Section', 'Click text to edit · Manage image')}
+          {uploadBtn('brk-rel-img', (e) => upload(e, setRelImage), 'Change Image')}
+        </Box>
         <Box sx={{ backgroundColor: '#fffaf7', px: 4, py: 5 }}>
           <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center' }}>
             <Box sx={{ flex: 1 }}>
@@ -325,7 +328,6 @@ export default function BrokerageContent() {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: '#999', fontSize: 14 }}>No image set</Box>
                 )}
               </Box>
-              {uploadBtn('brk-rel-img', (e) => upload(e, setRelImage), 'Change Image')}
             </Box>
           </Box>
         </Box>

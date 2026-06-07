@@ -360,6 +360,16 @@ export default function AcquisitionContent() {
       <Paper elevation={0} sx={{ p: 0, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.paper, mb: 2, overflow: 'hidden' }}>
         <Box sx={toolbarSx}>
           {sectionLabel('Relationships Section', 'Click text to edit · Manage image')}
+          <label htmlFor="acq-rel-img-upload">
+            <input id="acq-rel-img-upload" type="file" accept="image/*" hidden onChange={async (e) => {
+              const file = e.target.files?.[0]; if (!file) return;
+              const fd = new FormData(); fd.append('file', file);
+              try { const res = await axios.post('/api/upload', fd); if (res.data?.url) { setRelImage(res.data.url); setNotification({ message: 'Image updated', type: 'success' }); } } catch { setNotification({ message: 'Upload failed', type: 'error' }); }
+            }} />
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1.5, py: 0.5, borderRadius: 1, fontSize: 12, fontWeight: 500, cursor: 'pointer', color: theme.palette.text.secondary, border: `1px solid ${theme.palette.divider}`, transition: 'all 0.15s', '&:hover': { color: theme.palette.primary.main, borderColor: theme.palette.primary.main } }}>
+              <CloudUploadIcon sx={{ fontSize: 14 }} /> Change Image
+            </Box>
+          </label>
         </Box>
         <Box sx={{ backgroundColor: '#fffaf7', px: 4, py: 5 }}>
           <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center' }}>
@@ -377,16 +387,6 @@ export default function AcquisitionContent() {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: '#999', fontSize: 14 }}>No image set</Box>
                 )}
               </Box>
-              <label htmlFor="acq-rel-img-upload">
-                <input id="acq-rel-img-upload" type="file" accept="image/*" hidden onChange={async (e) => {
-                  const file = e.target.files?.[0]; if (!file) return;
-                  const fd = new FormData(); fd.append('file', file);
-                  try { const res = await axios.post('/api/upload', fd); if (res.data?.url) { setRelImage(res.data.url); setNotification({ message: 'Image updated', type: 'success' }); } } catch { setNotification({ message: 'Upload failed', type: 'error' }); }
-                }} />
-                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1.5, py: 0.5, borderRadius: 1, fontSize: 12, fontWeight: 500, cursor: 'pointer', color: '#666', border: '1px solid #ddd', mt: 1.5, transition: 'all 0.15s', '&:hover': { color: '#1777cb', borderColor: '#1777cb' } }}>
-                  <CloudUploadIcon sx={{ fontSize: 14 }} /> Change Image
-                </Box>
-              </label>
             </Box>
           </Box>
         </Box>

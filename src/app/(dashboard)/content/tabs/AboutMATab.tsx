@@ -7,13 +7,16 @@ import { useRouter } from 'next/navigation';
 import GroupsIcon from '@mui/icons-material/Groups';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 // Sub-tab content components
 import MeetTheTeamContent from './aboutma/MeetTheTeamContent';
 import TestimonialsContent from './aboutma/TestimonialsContent';
 import LookingForHigherContent from './aboutma/LookingForHigherContent';
+import AboutContent from './aboutma/AboutContent';
 
 const SUB_TABS = [
+  { key: 'about-ma/about',          label: 'About',               icon: <InfoOutlinedIcon sx={{ fontSize: 18 }} /> },
   { key: 'about-ma/meet-the-team',  label: 'Meet the Team',       icon: <GroupsIcon sx={{ fontSize: 18 }} /> },
   { key: 'about-ma/higher',         label: 'Looking For Higher',  icon: <FlightTakeoffIcon sx={{ fontSize: 18 }} /> },
   { key: 'about-ma/testimonials',   label: 'Testimonials',        icon: <FormatQuoteIcon sx={{ fontSize: 18 }} /> },
@@ -29,12 +32,12 @@ export default function AboutMATab({ currentTab }: AboutMATabProps) {
   const router = useRouter();
 
   // Default "about-ma" to "about-ma/meet-the-team"
-  const activeKey = currentTab === 'about-ma' ? 'about-ma/meet-the-team' : currentTab;
+  const activeKey = currentTab === 'about-ma' ? 'about-ma/about' : currentTab;
 
   // Redirect if bare about-ma
   React.useEffect(() => {
     if (currentTab === 'about-ma') {
-      router.replace('/content?tab=about-ma/meet-the-team', { scroll: false });
+      router.replace('/content?tab=about-ma/about', { scroll: false });
     }
   }, [currentTab, router]);
 
@@ -44,6 +47,8 @@ export default function AboutMATab({ currentTab }: AboutMATabProps) {
 
   const renderSubContent = () => {
     switch (activeKey) {
+      case 'about-ma/about':
+        return <AboutContent />;
       case 'about-ma/meet-the-team':
         return <MeetTheTeamContent />;
       case 'about-ma/higher':
@@ -51,7 +56,7 @@ export default function AboutMATab({ currentTab }: AboutMATabProps) {
       case 'about-ma/testimonials':
         return <TestimonialsContent />;
       default:
-        return <MeetTheTeamContent />;
+        return <AboutContent />;
     }
   };
 
