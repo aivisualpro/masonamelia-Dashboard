@@ -67,6 +67,9 @@ export default function AboutMATab({ currentTab }: AboutMATabProps) {
         sx={{
           width: 220,
           flexShrink: 0,
+          position: 'sticky',
+          top: 0,
+          alignSelf: 'flex-start',
           backgroundColor: theme.palette.background.paper,
           border: `1px solid ${theme.palette.divider}`,
           borderRadius: 2,

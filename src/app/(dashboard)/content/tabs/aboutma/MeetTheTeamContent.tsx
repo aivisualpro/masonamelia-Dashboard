@@ -126,11 +126,15 @@ export default function MeetTheTeamContent() {
   const [editForm, setEditForm] = React.useState(initialFormState);
   const editPicRef = React.useRef<HTMLInputElement>(null);
   const [editPicFile, setEditPicFile] = React.useState<File | null>(null);
+  const editDetailPicRef = React.useRef<HTMLInputElement>(null);
+  const [editDetailPicFile, setEditDetailPicFile] = React.useState<File | null>(null);
   const [expandedDesc, setExpandedDesc] = React.useState<Record<string, boolean>>({});
 
   // Add dialog upload
   const addPicRef = React.useRef<HTMLInputElement>(null);
   const [addPicFile, setAddPicFile] = React.useState<File | null>(null);
+  const addDetailPicRef = React.useRef<HTMLInputElement>(null);
+  const [addDetailPicFile, setAddDetailPicFile] = React.useState<File | null>(null);
 
   // Listen for header "Add Member" button
   React.useEffect(() => {
@@ -140,8 +144,8 @@ export default function MeetTheTeamContent() {
   }, []);
 
   // ── Add Dialog ────────────────────────────────────────────────
-  const openAddDialog = React.useCallback(() => { setFormData(initialFormState); setAddPicFile(null); setDialogOpen(true); }, []);
-  const closeAddDialog = React.useCallback(() => { setDialogOpen(false); setFormData(initialFormState); setAddPicFile(null); }, []);
+  const openAddDialog = React.useCallback(() => { setFormData(initialFormState); setAddPicFile(null); setAddDetailPicFile(null); setDialogOpen(true); }, []);
+  const closeAddDialog = React.useCallback(() => { setDialogOpen(false); setFormData(initialFormState); setAddPicFile(null); setAddDetailPicFile(null); }, []);
   const handleChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   }, []);
@@ -162,7 +166,6 @@ export default function MeetTheTeamContent() {
     try {
       let profilePic = formData.profile_picture;
       if (addPicFile) {
-        // Compress before uploading to reduce transfer time
         const compressed = await compressImage(addPicFile);
         const fd = new FormData();
         fd.append('file', compressed);
@@ -171,7 +174,17 @@ export default function MeetTheTeamContent() {
         });
         if (uploadRes.data?.url) profilePic = uploadRes.data.url;
       }
-      await axios.post(`${API_BASE}`, { ...formData, profile_picture: profilePic });
+      let detailPic = formData.team_member_picture;
+      if (addDetailPicFile) {
+        const compressed = await compressImage(addDetailPicFile);
+        const fd = new FormData();
+        fd.append('file', compressed);
+        const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (uploadRes.data?.url) detailPic = uploadRes.data.url;
+      }
+      await axios.post(`${API_BASE}`, { ...formData, profile_picture: profilePic, team_member_picture: detailPic });
       closeAddDialog();
       mutateMembers();
     } catch (error) {
@@ -185,6 +198,7 @@ export default function MeetTheTeamContent() {
   const startEdit = (m: TeamMember) => {
     setEditingId(m._id);
     setEditPicFile(null);
+    setEditDetailPicFile(null);
     setEditForm({
       name: m.name, profile_picture: m.profile_picture, team_member_picture: m.team_member_picture || '',
       description: m.description, designation: m.designation, phone: m.phone, email: m.email,
@@ -192,7 +206,7 @@ export default function MeetTheTeamContent() {
       linkedin: m.linkedin || '', youtube: m.youtube || '',
     });
   };
-  const cancelEdit = React.useCallback(() => { setEditingId(null); setEditPicFile(null); }, []);
+  const cancelEdit = React.useCallback(() => { setEditingId(null); setEditPicFile(null); setEditDetailPicFile(null); }, []);
   const handleEditChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setEditForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   }, []);
@@ -201,7 +215,6 @@ export default function MeetTheTeamContent() {
     try {
       let profilePic = editForm.profile_picture;
       if (editPicFile) {
-        // Compress before uploading to reduce transfer time
         const compressed = await compressImage(editPicFile);
         const fd = new FormData();
         fd.append('file', compressed);
@@ -210,9 +223,20 @@ export default function MeetTheTeamContent() {
         });
         if (uploadRes.data?.url) profilePic = uploadRes.data.url;
       }
-      await axios.put(`${API_BASE}/${editingId}`, { ...editForm, profile_picture: profilePic });
+      let detailPic = editForm.team_member_picture;
+      if (editDetailPicFile) {
+        const compressed = await compressImage(editDetailPicFile);
+        const fd = new FormData();
+        fd.append('file', compressed);
+        const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (uploadRes.data?.url) detailPic = uploadRes.data.url;
+      }
+      await axios.put(`${API_BASE}/${editingId}`, { ...editForm, profile_picture: profilePic, team_member_picture: detailPic });
       setEditingId(null);
       setEditPicFile(null);
+      setEditDetailPicFile(null);
       mutateMembers();
     } catch (error) {
       console.error('Error updating team member:', error);
@@ -598,6 +622,42 @@ export default function MeetTheTeamContent() {
                         <TextField name="address" label="Address" size="small" value={editForm.address}
                           onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
                           sx={fieldSx(theme)} />
+
+                        {/* Detail Page Photo */}
+                        <Box>
+                          <Typography sx={{ fontSize: 11, fontWeight: 600, color: theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
+                            Detail Page Photo
+                          </Typography>
+                          <Box sx={{
+                            border: `1px dashed ${editDetailPicFile ? theme.palette.primary.main : theme.palette.divider}`,
+                            borderRadius: 1, p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5,
+                            cursor: 'pointer', transition: 'border-color 0.2s',
+                            '&:hover': { borderColor: theme.palette.primary.main },
+                          }}
+                            onClick={() => editDetailPicRef.current?.click()}
+                          >
+                            {editDetailPicFile ? (
+                              <img src={URL.createObjectURL(editDetailPicFile)} alt="Detail preview" style={{ height: 60, width: 60, objectFit: 'cover', borderRadius: 4 }} />
+                            ) : editForm.team_member_picture ? (
+                              <img src={editForm.team_member_picture} alt="Detail current" style={{ height: 60, width: 60, objectFit: 'cover', borderRadius: 4 }} />
+                            ) : (
+                              <Box sx={{ height: 60, width: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', borderRadius: 1 }}>
+                                <UploadIcon sx={{ fontSize: 20, color: theme.palette.text.disabled }} />
+                              </Box>
+                            )}
+                            <Box>
+                              <Typography sx={{ fontSize: 12, fontWeight: 500, color: theme.palette.text.primary }}>
+                                {editDetailPicFile ? editDetailPicFile.name : editForm.team_member_picture ? 'Click to change' : 'Upload detail photo'}
+                              </Typography>
+                              <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled }}>
+                                Used on the team member detail page. Falls back to main photo if not set.
+                              </Typography>
+                            </Box>
+                            <input ref={editDetailPicRef} hidden accept="image/*" type="file"
+                              onChange={(e) => setEditDetailPicFile(e.target.files?.[0] || null)} />
+                          </Box>
+                        </Box>
+
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
                           <TextField name="facebook" label="Facebook" size="small" value={editForm.facebook}
                             onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }}
@@ -750,6 +810,34 @@ export default function MeetTheTeamContent() {
                 </>
               )}
               <input ref={addPicRef} hidden accept="image/*" type="file" onChange={(e) => setAddPicFile(e.target.files?.[0] || null)} />
+            </Box>
+
+            {/* Detail photo upload */}
+            <Box
+              sx={{
+                border: `2px dashed ${addDetailPicFile ? theme.palette.primary.main : theme.palette.divider}`,
+                borderRadius: 2, p: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                cursor: 'pointer', transition: 'border-color 0.2s',
+                '&:hover': { borderColor: theme.palette.primary.main },
+              }}
+              onClick={() => addDetailPicRef.current?.click()}
+            >
+              {addDetailPicFile ? (
+                <img src={URL.createObjectURL(addDetailPicFile)} alt="Detail preview" style={{ height: 60, width: 60, objectFit: 'cover', borderRadius: 4 }} />
+              ) : (
+                <Box sx={{ height: 60, width: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', borderRadius: 1 }}>
+                  <UploadIcon sx={{ fontSize: 24, color: theme.palette.text.disabled }} />
+                </Box>
+              )}
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.primary }}>
+                  {addDetailPicFile ? addDetailPicFile.name : 'Upload detail page photo (optional)'}
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled }}>
+                  Separate image for the member detail page. Falls back to main photo if not uploaded.
+                </Typography>
+              </Box>
+              <input ref={addDetailPicRef} hidden accept="image/*" type="file" onChange={(e) => setAddDetailPicFile(e.target.files?.[0] || null)} />
             </Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
