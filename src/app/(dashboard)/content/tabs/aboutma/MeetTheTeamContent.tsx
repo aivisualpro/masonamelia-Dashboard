@@ -34,7 +34,6 @@ import Image from 'next/image';
 import { useTeams, useContact } from '@/api/hooks';
 import { optimizeCloudinaryUrl } from '@/utils/cloudinary';
 import { compressImage } from '@/utils/compressImage';
-import SaveIcon from '@mui/icons-material/Save';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 interface TeamMember {
@@ -142,6 +141,13 @@ export default function MeetTheTeamContent() {
     window.addEventListener('open-add-member', handler);
     return () => window.removeEventListener('open-add-member', handler);
   }, []);
+
+  // Listen for header "Save Changes" button
+  React.useEffect(() => {
+    const handler = () => saveHero();
+    window.addEventListener('save-contact', handler);
+    return () => window.removeEventListener('save-contact', handler);
+  });
 
   // ── Add Dialog ────────────────────────────────────────────────
   const openAddDialog = React.useCallback(() => { setFormData(initialFormState); setAddPicFile(null); setAddDetailPicFile(null); setDialogOpen(true); }, []);
@@ -305,8 +311,7 @@ export default function MeetTheTeamContent() {
               Click text to edit · Background image controllable
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <label htmlFor="hero-bg-upload">
+          <label htmlFor="hero-bg-upload">
               <input
                 id="hero-bg-upload"
                 type="file"
@@ -354,17 +359,6 @@ export default function MeetTheTeamContent() {
                 <CloudUploadIcon sx={{ fontSize: 14 }} /> Change Background
               </Box>
             </label>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<SaveIcon sx={{ fontSize: 14 }} />}
-              onClick={saveHero}
-              disabled={heroSaving}
-              sx={{ textTransform: 'none', fontSize: 12, fontWeight: 500, borderRadius: 1.5, py: 0.5 }}
-            >
-              {heroSaving ? 'Saving...' : 'Save Hero'}
-            </Button>
-          </Box>
         </Box>
 
         {/* Hero Preview — EXACT replica of website TeamPage hero */}

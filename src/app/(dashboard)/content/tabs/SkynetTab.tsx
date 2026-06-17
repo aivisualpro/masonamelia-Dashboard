@@ -29,10 +29,10 @@ const DEFAULTS = {
   timeline_title_white: 'The Evolution of SkyNet:',
   timeline_title_blue: 'A Timeline of Innovation',
   timeline_items: [
-    { year: '2023', description: 'Mason Amelia launches, relying on traditional, manual methods for aircraft data aggregation and analysis.', image: '' },
-    { year: '2024', description: 'As the sales team grew, it became clear that shared spreadsheets and folders were insufficient to properly equip and align our brokers. We envisioned a purpose-built web and mobile platform and named it SkyNet.', image: '' },
-    { year: '2025', description: 'SkyNet is deployed. Secure, fast, and built by aviation experts, it quickly becomes the backbone of our brokers\u2019 pricing, market insight, and decision-making.', image: '' },
-    { year: '2026', description: 'SkyNet continues to evolve, integrating predictive analytics and early AI-driven learning to deliver even more accurate forecasting, smarter pricing strategy, and enhanced deal preparation.', image: '' },
+    { year: '2023', description: 'Mason Amelia launches, relying on traditional, manual methods for aircraft data aggregation and analysis.', image: '/images/skynet/timeline-one.png' },
+    { year: '2024', description: 'As the sales team grew, it became clear that shared spreadsheets and folders were insufficient to properly equip and align our brokers. We envisioned a purpose-built web and mobile platform and named it SkyNet.', image: '/images/skynet/timeline-five.avif' },
+    { year: '2025', description: 'SkyNet is deployed. Secure, fast, and built by aviation experts, it quickly becomes the backbone of our brokers\u2019 pricing, market insight, and decision-making.', image: '/images/skynet/timeline-four.jpg' },
+    { year: '2026', description: 'SkyNet continues to evolve, integrating predictive analytics and early AI-driven learning to deliver even more accurate forecasting, smarter pricing strategy, and enhanced deal preparation.', image: '/images/skynet/timeline-two.png' },
   ],
 };
 
@@ -77,7 +77,12 @@ export default function SkynetTab() {
       setAdvDesc(contact.skynet_advantage_description || DEFAULTS.adv_desc);
       setTimelineTitleWhite(contact.skynet_timeline_title_white || DEFAULTS.timeline_title_white);
       setTimelineTitleBlue(contact.skynet_timeline_title_blue || DEFAULTS.timeline_title_blue);
-      if (contact.skynet_timeline_items?.length) setTimelineItems(contact.skynet_timeline_items);
+      if (contact.skynet_timeline_items?.length) {
+        setTimelineItems(contact.skynet_timeline_items.map((item: any, idx: number) => ({
+          ...item,
+          image: item.image || DEFAULTS.timeline_items[idx]?.image || '',
+        })));
+      }
     }
   }, [contact]);
 
