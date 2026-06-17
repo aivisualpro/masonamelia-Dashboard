@@ -390,12 +390,6 @@ export default function EditJet({ id }: EditJetProps) {
       setSnack({ open: true, severity: 'success', msg: 'Aircraft updated successfully' });
       setImagesLocal([]);
       clearFeaturedLocal();
-      // Redirect after success
-      if (typeof window !== 'undefined') {
-        setTimeout(() => {
-          window.location.href = '/aircraft';
-        }, 700);
-      }
     } catch (e) {
       setSnack({ open: true, severity: 'error', msg: (e as Error).message });
     } finally {
