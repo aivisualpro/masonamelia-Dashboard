@@ -10,7 +10,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import SaveIcon from '@mui/icons-material/Save';
+
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import axios from 'axios';
 import { useContact } from '@/api/hooks';
@@ -56,6 +56,13 @@ export default function LookingForHigherContent() {
       setVisionBody2(contact.higher_vision_body2 || DEFAULTS.vision_body2);
     }
   }, [contact]);
+
+  // Listen for header "Save Changes" button
+  React.useEffect(() => {
+    const handler = () => handleSave();
+    window.addEventListener('save-contact', handler);
+    return () => window.removeEventListener('save-contact', handler);
+  });
 
   // ── Save ──
   const handleSave = async () => {
@@ -166,14 +173,6 @@ export default function LookingForHigherContent() {
                 <CloudUploadIcon sx={{ fontSize: 14 }} /> Change Background
               </Box>
             </label>
-            <Button
-              variant="contained" size="small"
-              startIcon={<SaveIcon sx={{ fontSize: 14 }} />}
-              onClick={handleSave} disabled={saving}
-              sx={{ textTransform: 'none', fontSize: 12, fontWeight: 500, borderRadius: 1.5, py: 0.5 }}
-            >
-              {saving ? 'Saving...' : 'Save All'}
-            </Button>
           </Box>
         </Box>
 
