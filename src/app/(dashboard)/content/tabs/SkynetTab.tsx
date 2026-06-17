@@ -3,16 +3,15 @@
 import * as React from 'react';
 import {
   Box,
-  Button,
   Paper,
   Typography,
   Snackbar,
   Alert,
   IconButton,
   TextField,
+  Button,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import SaveIcon from '@mui/icons-material/Save';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -108,6 +107,13 @@ export default function SkynetTab() {
     }
   };
 
+  // Listen for header "Save Changes" button
+  React.useEffect(() => {
+    const handler = () => handleSave();
+    window.addEventListener('save-contact', handler);
+    return () => window.removeEventListener('save-contact', handler);
+  });
+
   // ── Upload handler ──
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -182,22 +188,16 @@ export default function SkynetTab() {
             <Typography sx={{ fontSize: 13, fontWeight: 600, color: theme.palette.text.secondary }}>Hero Section · Skynet Page</Typography>
             <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, fontStyle: 'italic' }}>Click text to edit · Background image controllable</Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <label htmlFor="skynet-hero-bg-upload">
-              <input id="skynet-hero-bg-upload" type="file" accept="image/*" hidden onChange={handleUpload} />
-              <Box component="span" sx={{
-                display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1.5, py: 0.5, borderRadius: 1, fontSize: 12, fontWeight: 500,
-                cursor: 'pointer', color: theme.palette.text.secondary, border: `1px solid ${theme.palette.divider}`, transition: 'all 0.15s',
-                '&:hover': { color: theme.palette.primary.main, borderColor: theme.palette.primary.main },
-              }}>
-                <CloudUploadIcon sx={{ fontSize: 14 }} /> Change Background
-              </Box>
-            </label>
-            <Button variant="contained" size="small" startIcon={<SaveIcon sx={{ fontSize: 14 }} />} onClick={handleSave} disabled={saving}
-              sx={{ textTransform: 'none', fontSize: 12, fontWeight: 500, borderRadius: 1.5, py: 0.5 }}>
-              {saving ? 'Saving...' : 'Save All'}
-            </Button>
-          </Box>
+          <label htmlFor="skynet-hero-bg-upload">
+            <input id="skynet-hero-bg-upload" type="file" accept="image/*" hidden onChange={handleUpload} />
+            <Box component="span" sx={{
+              display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1.5, py: 0.5, borderRadius: 1, fontSize: 12, fontWeight: 500,
+              cursor: 'pointer', color: theme.palette.text.secondary, border: `1px solid ${theme.palette.divider}`, transition: 'all 0.15s',
+              '&:hover': { color: theme.palette.primary.main, borderColor: theme.palette.primary.main },
+            }}>
+              <CloudUploadIcon sx={{ fontSize: 14 }} /> Change Background
+            </Box>
+          </label>
         </Box>
 
         {/* Hero Preview — matches website SkynetPage hero */}
