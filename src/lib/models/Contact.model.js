@@ -169,6 +169,20 @@ const contactSchema = new mongoose.Schema({
             { prefix: '', count: 0, suffix: '', description: 'Excuses — delivering trusted results every single time' },
         ],
     },
+    // ── Home page: Hero Service Cards ──
+    home_hero_service_cards: {
+        type: [{
+            title: { type: String, default: '' },
+            tagline: { type: String, default: '' },
+            link: { type: String, default: '' },
+        }],
+        default: [
+            { title: 'Sell My Plane', tagline: 'Aircraft Brokerage Services', link: '/brokerage' },
+            { title: 'Help Me Buy', tagline: 'Acquisition Services', link: '/acquisition' },
+            { title: 'Valuation', tagline: 'Real-Time Insights by SkyNet', link: '/skynet' },
+            { title: 'Ancillary', tagline: 'Legal • Sales Tax • Insurance', link: '/acquisition#acquisition' },
+        ],
+    },
     // ── Home page: Gallery ──
     home_gallery_title: { type: String, default: 'A Bespoke Approach to Brokerage' },
     // ── Acquisition page hero ──

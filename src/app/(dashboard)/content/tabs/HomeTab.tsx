@@ -31,6 +31,12 @@ const DEFAULTS = {
     { prefix: '', count: 8, suffix: '', description: 'Dedicated professionals team serving our valued clients' },
     { prefix: '', count: 0, suffix: '', description: 'Excuses — delivering trusted results every single time' },
   ],
+  hero_service_cards: [
+    { title: 'Sell My Plane', tagline: 'Aircraft Brokerage Services', link: '/brokerage' },
+    { title: 'Help Me Buy', tagline: 'Acquisition Services', link: '/acquisition' },
+    { title: 'Valuation', tagline: 'Real-Time Insights by SkyNet', link: '/skynet' },
+    { title: 'Ancillary', tagline: 'Legal • Sales Tax • Insurance', link: '/acquisition#acquisition' },
+  ],
   gallery_title: 'A Bespoke Approach to Brokerage',
 };
 
@@ -55,6 +61,9 @@ export default function HomeTab() {
   const [statsDesc, setStatsDesc] = React.useState(DEFAULTS.stats_description);
   const [statsCards, setStatsCards] = React.useState(DEFAULTS.stats_cards);
 
+  // ── Hero Service Cards ──
+  const [serviceCards, setServiceCards] = React.useState(DEFAULTS.hero_service_cards);
+
   // ── Gallery ──
   const [galleryTitle, setGalleryTitle] = React.useState(DEFAULTS.gallery_title);
 
@@ -78,6 +87,8 @@ export default function HomeTab() {
     setStatsDesc(contact.home_stats_description || DEFAULTS.stats_description);
     if (contact.home_stats_cards?.length) setStatsCards(contact.home_stats_cards);
 
+    if (contact.home_hero_service_cards?.length) setServiceCards(contact.home_hero_service_cards);
+
     setGalleryTitle(contact.home_gallery_title || DEFAULTS.gallery_title);
   }, [contact]);
 
@@ -98,6 +109,7 @@ export default function HomeTab() {
         home_stats_title: statsTitle,
         home_stats_description: statsDesc,
         home_stats_cards: statsCards,
+        home_hero_service_cards: serviceCards,
         home_gallery_title: galleryTitle,
       });
       mutateContact();
@@ -196,6 +208,48 @@ export default function HomeTab() {
               <EditableBox value={heroMobileTitle} onUpdate={setHeroMobileTitle} sx={{ fontSize: '1.2rem', fontWeight: 700, color: '#1777cb', mx: 'auto', maxWidth: 400 }} />
             </Box>
           </Box>
+        </Box>
+      </Paper>
+
+      {/* ─── 1b. HERO SERVICE CARDS ─── */}
+      <Paper elevation={0} sx={{ p: 0, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.paper, mb: 2, overflow: 'hidden' }}>
+        <Box sx={toolbarSx}>
+          {sectionLabel('Hero Service Cards', 'The 4 navigation cards below the hero (title, tagline, link)')}
+        </Box>
+        <Box sx={{ backgroundColor: '#111218', px: 4, py: 4 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 2 }}>
+            {serviceCards.map((card, idx) => (
+              <Box key={idx} sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(15,23,42,0.7)' }}>
+                <TextField
+                  fullWidth size="small" placeholder="Title" value={card.title}
+                  onChange={(e) => { const c = [...serviceCards]; c[idx] = { ...c[idx], title: e.target.value }; setServiceCards(c); }}
+                  inputProps={{ style: { color: '#fff', fontWeight: 600, fontSize: 14 } }}
+                  sx={{ mb: 1, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } } }}
+                />
+                <TextField
+                  fullWidth size="small" placeholder="Tagline" value={card.tagline}
+                  onChange={(e) => { const c = [...serviceCards]; c[idx] = { ...c[idx], tagline: e.target.value }; setServiceCards(c); }}
+                  inputProps={{ style: { color: 'rgb(203,213,225)', fontSize: 12 } }}
+                  sx={{ mb: 1, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } } }}
+                />
+                <TextField
+                  fullWidth size="small" placeholder="Link (e.g. /brokerage)" value={card.link}
+                  onChange={(e) => { const c = [...serviceCards]; c[idx] = { ...c[idx], link: e.target.value }; setServiceCards(c); }}
+                  inputProps={{ style: { color: '#1777cb', fontSize: 12 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } } }}
+                />
+                {serviceCards.length > 1 && (
+                  <IconButton size="small" onClick={() => setServiceCards(serviceCards.filter((_, i) => i !== idx))} sx={{ mt: 0.5, color: '#ef4444' }}>
+                    <DeleteIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                )}
+              </Box>
+            ))}
+          </Box>
+          <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={() => setServiceCards([...serviceCards, { title: '', tagline: '', link: '' }])}
+            sx={{ textTransform: 'none', fontSize: 12, mt: 2, color: 'rgba(255,255,255,0.4)', borderColor: 'rgba(255,255,255,0.15)', '&:hover': { color: '#1777cb', borderColor: '#1777cb' } }} variant="outlined">
+            Add Card
+          </Button>
         </Box>
       </Paper>
 
