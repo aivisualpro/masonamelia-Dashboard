@@ -141,6 +141,36 @@ const contactSchema = new mongoose.Schema({
             { year: '2026', description: 'SkyNet continues to evolve, integrating predictive analytics and early AI-driven learning to deliver even more accurate forecasting, smarter pricing strategy, and enhanced deal preparation.', image: '' },
         ],
     },
+    // ── Home page: Hero ──
+    home_hero_title: { type: String, default: 'Turbulence-Free Transactions' },
+    home_hero_description: { type: String, default: 'Industry-leading marketing, data, and grit to help you buy or sell.' },
+    home_hero_video_url: { type: String, default: '/assets/file.mp4' },
+    home_hero_mobile_title: { type: String, default: 'Turbulence-Free Transactions' },
+    // ── Home page: Meet the Team ──
+    home_team_title_white: { type: String, default: 'From San Antonio to Duluth…' },
+    home_team_title_blue: { type: String, default: 'Meet the Team' },
+    home_team_description: { type: String, default: 'We are purveyors of high-end piston and owner-flown turbine aircraft. Our nationwide team brings decades of experience across every corner of aviation. From initial consultation to final aircraft delivery, we handle every transaction with efficiency and an unwavering focus on your satisfaction\'s bottom line. Putting clients first and building lasting relationships is the foundation of our success and yours.' },
+    home_team_image: { type: String, default: '' },
+    // ── Home page: By the Numbers ──
+    home_stats_title: { type: String, default: 'By the Numbers' },
+    home_stats_description: { type: String, default: 'The data doesn\'t lie. Mason Amelia is your expert wingman with a proven track record and reputation.' },
+    home_stats_cards: {
+        type: [{
+            prefix: { type: String, default: '' },
+            count: { type: Number, default: 0 },
+            suffix: { type: String, default: '' },
+            description: { type: String, default: '' },
+        }],
+        default: [
+            { prefix: '$', count: 500, suffix: 'M', description: 'In completed aircraft transactions' },
+            { prefix: '', count: 300, suffix: '+', description: 'Aircraft closings successfully managed worldwide' },
+            { prefix: '', count: 75, suffix: '', description: 'Years of combined experience in aviation industry' },
+            { prefix: '', count: 8, suffix: '', description: 'Dedicated professionals team serving our valued clients' },
+            { prefix: '', count: 0, suffix: '', description: 'Excuses — delivering trusted results every single time' },
+        ],
+    },
+    // ── Home page: Gallery ──
+    home_gallery_title: { type: String, default: 'A Bespoke Approach to Brokerage' },
     // ── Acquisition page hero ──
     acquisition_hero_title_white: { type: String, default: 'The Right Aircraft ' },
     acquisition_hero_title_blue: { type: String, default: 'Changes Everything' },
