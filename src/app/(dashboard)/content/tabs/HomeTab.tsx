@@ -38,6 +38,8 @@ const DEFAULTS = {
     { title: 'Ancillary', tagline: 'Legal • Sales Tax • Insurance', link: '/acquisition#acquisition' },
   ],
   gallery_title: 'A Bespoke Approach to Brokerage',
+  testimonials_title: 'What our Clients are Saying',
+  testimonials_description: 'The words of our valued clients speak volumes. Their experiences reflect the trust, results and relationships that we work hard to earn every day.',
 };
 
 export default function HomeTab() {
@@ -67,6 +69,10 @@ export default function HomeTab() {
   // ── Gallery ──
   const [galleryTitle, setGalleryTitle] = React.useState(DEFAULTS.gallery_title);
 
+  // ── Testimonials ──
+  const [testimonialsTitle, setTestimonialsTitle] = React.useState(DEFAULTS.testimonials_title);
+  const [testimonialsDesc, setTestimonialsDesc] = React.useState(DEFAULTS.testimonials_description);
+
   const [saving, setSaving] = React.useState(false);
   const [notification, setNotification] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -90,6 +96,9 @@ export default function HomeTab() {
     if (contact.home_hero_service_cards?.length) setServiceCards(contact.home_hero_service_cards);
 
     setGalleryTitle(contact.home_gallery_title || DEFAULTS.gallery_title);
+
+    setTestimonialsTitle(contact.home_testimonials_title || DEFAULTS.testimonials_title);
+    setTestimonialsDesc(contact.home_testimonials_description || DEFAULTS.testimonials_description);
   }, [contact]);
 
   // ── Save All ──
@@ -111,6 +120,8 @@ export default function HomeTab() {
         home_stats_cards: statsCards,
         home_hero_service_cards: serviceCards,
         home_gallery_title: galleryTitle,
+        home_testimonials_title: testimonialsTitle,
+        home_testimonials_description: testimonialsDesc,
       });
       mutateContact();
       setNotification({ message: 'Home page saved', type: 'success' });
@@ -280,7 +291,7 @@ export default function HomeTab() {
                 {teamImage ? (
                   <img src={teamImage} alt="Meet the Team" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
                 ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: '#999', fontSize: 14 }}>Default image (team.jpg)</Box>
+                  <img src="/images/team.jpg" alt="Meet the Team (default)" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
                 )}
               </Box>
             </Box>
@@ -349,6 +360,25 @@ export default function HomeTab() {
         </Box>
         <Box sx={{ backgroundColor: '#111218', px: 4, py: 5, textAlign: 'center' }}>
           <EditableBox value={galleryTitle} onUpdate={setGalleryTitle} sx={{ fontSize: '2rem', fontWeight: 700, color: '#fff', lineHeight: 1.1 }} />
+        </Box>
+      </Paper>
+
+      {/* ─── 5. TESTIMONIALS ─── */}
+      <Paper elevation={0} sx={{ p: 0, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, backgroundColor: theme.palette.background.paper, mb: 2, overflow: 'hidden' }}>
+        <Box sx={toolbarSx}>
+          {sectionLabel('Testimonials Section', 'Edit the section heading and description · Reviews are managed from the Reviews page')}
+        </Box>
+        <Box sx={{ background: 'linear-gradient(135deg, #1777cb 0%, #278AE0 50%, #1777cb 100%)', px: 4, py: 5, textAlign: 'center' }}>
+          <EditableBox value={testimonialsTitle} onUpdate={setTestimonialsTitle} sx={{ fontSize: '2.5rem', fontWeight: 700, color: '#fff', lineHeight: 1.1 }} />
+          <EditableBox value={testimonialsDesc} onUpdate={setTestimonialsDesc} sx={{ fontSize: '1rem', color: 'rgba(255,255,255,0.85)', mt: 3, maxWidth: 700, mx: 'auto', lineHeight: 1.7 }} />
+          <Box sx={{ mt: 3, display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {[1, 2, 3, 4].map((i) => (
+              <Box key={i} sx={{ width: 180, height: 100, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+                Testimonial {i}
+              </Box>
+            ))}
+          </Box>
+          <Typography sx={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', mt: 2, fontStyle: 'italic' }}>Testimonial cards are managed from{' '}<a href="/content?tab=about-ma/testimonials" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'underline' }}>About MA / Testimonials</a></Typography>
         </Box>
       </Paper>
 

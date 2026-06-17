@@ -185,6 +185,9 @@ const contactSchema = new mongoose.Schema({
     },
     // ── Home page: Gallery ──
     home_gallery_title: { type: String, default: 'A Bespoke Approach to Brokerage' },
+    // ── Home page: Testimonials ──
+    home_testimonials_title: { type: String, default: 'What our Clients are Saying' },
+    home_testimonials_description: { type: String, default: 'The words of our valued clients speak volumes. Their experiences reflect the trust, results and relationships that we work hard to earn every day.' },
     // ── Acquisition page hero ──
     acquisition_hero_title_white: { type: String, default: 'The Right Aircraft ' },
     acquisition_hero_title_blue: { type: String, default: 'Changes Everything' },
