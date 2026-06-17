@@ -414,27 +414,56 @@ export default function AcquisitionContent() {
 
           {/* Editor Fields */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {[
-              { label: 'Line 1', white: ctaLine1White, setWhite: setCtaLine1White, blue: ctaLine1Blue, setBlue: setCtaLine1Blue },
-              { label: 'Line 2', white: ctaLine2White, setWhite: setCtaLine2White, blue: ctaLine2Blue, setBlue: setCtaLine2Blue },
-              { label: 'Line 3', white: ctaLine3White, setWhite: setCtaLine3White, blue: ctaLine3Blue, setBlue: setCtaLine3Blue },
-            ].map((line) => (
-              <Box key={line.label} sx={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr', gap: 1.5, alignItems: 'center' }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{line.label}</Typography>
-                <TextField
-                  fullWidth size="small" placeholder="White text" value={line.white}
-                  onChange={(e) => line.setWhite(e.target.value)}
-                  inputProps={{ style: { color: '#fff', fontSize: 14 } }}
-                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' } } }}
-                />
-                <TextField
-                  fullWidth size="small" placeholder="Blue text" value={line.blue}
-                  onChange={(e) => line.setBlue(e.target.value)}
-                  inputProps={{ style: { color: '#268AE0', fontSize: 14, fontWeight: 600 } }}
-                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(38,138,224,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(38,138,224,0.5)' } } }}
-                />
-              </Box>
-            ))}
+            {/* Line 1 */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr', gap: 1.5, alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Line 1</Typography>
+              <TextField
+                fullWidth size="small" placeholder="White text" value={ctaLine1White}
+                onChange={(e) => setCtaLine1White(e.target.value)}
+                inputProps={{ style: { color: '#fff', fontSize: 14 } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' } } }}
+              />
+              <TextField
+                fullWidth size="small" placeholder="Blue text" value={ctaLine1Blue}
+                onChange={(e) => setCtaLine1Blue(e.target.value)}
+                inputProps={{ style: { color: '#268AE0', fontSize: 14, fontWeight: 600 } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(38,138,224,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(38,138,224,0.5)' } } }}
+              />
+            </Box>
+
+            {/* Line 2 */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr', gap: 1.5, alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Line 2</Typography>
+              <TextField
+                fullWidth size="small" placeholder="White text" value={ctaLine2White}
+                onChange={(e) => setCtaLine2White(e.target.value)}
+                inputProps={{ style: { color: '#fff', fontSize: 14 } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' } } }}
+              />
+              <TextField
+                fullWidth size="small" placeholder="Blue text" value={ctaLine2Blue}
+                onChange={(e) => setCtaLine2Blue(e.target.value)}
+                inputProps={{ style: { color: '#268AE0', fontSize: 14, fontWeight: 600 } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(38,138,224,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(38,138,224,0.5)' } } }}
+              />
+            </Box>
+
+            {/* Line 3 */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr', gap: 1.5, alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Line 3</Typography>
+              <TextField
+                fullWidth size="small" placeholder="White text" value={ctaLine3White}
+                onChange={(e) => setCtaLine3White(e.target.value)}
+                inputProps={{ style: { color: '#fff', fontSize: 14 } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.25)' } } }}
+              />
+              <TextField
+                fullWidth size="small" placeholder="Blue text" value={ctaLine3Blue}
+                onChange={(e) => setCtaLine3Blue(e.target.value)}
+                inputProps={{ style: { color: '#268AE0', fontSize: 14, fontWeight: 600 } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(38,138,224,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(38,138,224,0.5)' } } }}
+              />
+            </Box>
           </Box>
         </Box>
       </Paper>
