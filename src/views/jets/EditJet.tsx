@@ -17,7 +17,7 @@ import {
   AlertColor
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Delete as DeleteIcon, Upload as UploadIcon, Send as SendIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Upload as UploadIcon, Send as SendIcon, ArrowBack as ArrowBackIcon, DragIndicator as DragIndicatorIcon } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -292,6 +292,34 @@ export default function EditJet({ id }: EditJetProps) {
   };
   const removeLocalImage = (idx: number) => setImagesLocal((prev) => prev.filter((_, i) => i !== idx));
   const removeExistingImage = (idx: number) => setImagesExisting((prev) => prev.filter((_, i) => i !== idx));
+
+  // drag & drop reordering for existing images
+  const dragIdx = useRef<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const onDragStart = (idx: number) => {
+    dragIdx.current = idx;
+  };
+  const onDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (dragIdx.current !== null && dragIdx.current !== idx) {
+      setDragOverIdx(idx);
+    }
+  };
+  const onDragLeave = () => setDragOverIdx(null);
+  const onDrop = (idx: number) => {
+    const from = dragIdx.current;
+    if (from === null || from === idx) { dragIdx.current = null; setDragOverIdx(null); return; }
+    setImagesExisting((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(idx, 0, moved);
+      return next;
+    });
+    dragIdx.current = null;
+    setDragOverIdx(null);
+  };
+  const onDragEnd = () => { dragIdx.current = null; setDragOverIdx(null); };
 
   // featured handlers
   const onFeaturedChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -573,12 +601,48 @@ export default function EditJet({ id }: EditJetProps) {
                 <Chip size="small" label={`${imagesExisting.length + imagesLocal.length} total`} />
               </Box>
 
-              {/* Existing images */}
+              {/* Existing images — draggable */}
               {imagesExisting.length > 0 && (
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 1.5, mb: imagesLocal.length > 0 ? 2 : 0 }}>
                   {imagesExisting.map((url, idx) => (
-                    <Box key={url + idx} sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
+                    <Box
+                      key={url + idx}
+                      draggable
+                      onDragStart={() => onDragStart(idx)}
+                      onDragOver={(e: React.DragEvent) => onDragOver(e, idx)}
+                      onDragLeave={onDragLeave}
+                      onDrop={() => onDrop(idx)}
+                      onDragEnd={onDragEnd}
+                      sx={{
+                        position: 'relative', borderRadius: 2, overflow: 'hidden',
+                        border: dragOverIdx === idx ? '2px solid #1777cb' : `1px solid ${theme.palette.divider}`,
+                        opacity: dragIdx.current === idx ? 0.5 : 1,
+                        cursor: 'grab',
+                        transition: 'border-color 0.15s, box-shadow 0.15s',
+                        boxShadow: dragOverIdx === idx ? '0 0 12px rgba(23,119,203,0.4)' : 'none',
+                        '&:active': { cursor: 'grabbing' },
+                      }}
+                    >
                       <img src={url} alt={`img-${idx}`} style={imgThumbStyle} />
+                      {/* Serial number chip */}
+                      <Chip
+                        size="small"
+                        label={`#${idx + 1}`}
+                        sx={{
+                          position: 'absolute', top: 6, left: 6,
+                          backgroundColor: 'rgba(23,119,203,0.9)', color: '#fff',
+                          fontWeight: 700, fontSize: 11, height: 22, minWidth: 28,
+                          '& .MuiChip-label': { px: 0.8 },
+                        }}
+                      />
+                      {/* Drag handle */}
+                      <Box sx={{
+                        position: 'absolute', bottom: 6, left: 6,
+                        backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 1,
+                        display: 'flex', alignItems: 'center', p: 0.25,
+                      }}>
+                        <DragIndicatorIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
+                      </Box>
                       <IconButton
                         size="small"
                         onClick={() => removeExistingImage(idx)}
