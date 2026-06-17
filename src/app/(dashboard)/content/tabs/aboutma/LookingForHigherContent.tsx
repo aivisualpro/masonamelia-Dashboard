@@ -111,14 +111,14 @@ export default function LookingForHigherContent() {
     <Box
       contentEditable
       suppressContentEditableWarning
-      onBlur={(e) => onUpdate((e.target as HTMLElement)?.textContent ?? '')}
+      onBlur={(e) => onUpdate((e.target as HTMLElement)?.innerText ?? '')}
       sx={{
         outline: 'none',
         cursor: 'text',
         px: 1,
         py: 0.3,
         borderRadius: 0.5,
-        transition: 'background-color 0.15s',
+        transition: 'background-color 0.15s', whiteSpace: 'pre-line',
         '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
         '&:focus': {
           backgroundColor: 'rgba(255,255,255,0.08)',

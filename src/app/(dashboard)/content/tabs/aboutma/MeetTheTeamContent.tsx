@@ -438,7 +438,7 @@ export default function MeetTheTeamContent() {
               component="h1"
               contentEditable
               suppressContentEditableWarning
-              onBlur={(e) => { const t = (e.target as HTMLElement)?.textContent ?? ''; setHeroTitle(t); }}
+              onBlur={(e) => { const t = (e.target as HTMLElement)?.innerText ?? ''; setHeroTitle(t); }}
               sx={{
                 fontSize: '3rem', // text-[3rem]
                 fontWeight: 700, // font-bold
@@ -453,7 +453,7 @@ export default function MeetTheTeamContent() {
                 px: 1,
                 py: 0.3,
                 borderRadius: 0.5,
-                transition: 'background-color 0.15s',
+                transition: 'background-color 0.15s', whiteSpace: 'pre-line',
                 '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
                 '&:focus': {
                   backgroundColor: 'rgba(255,255,255,0.08)',
@@ -470,7 +470,7 @@ export default function MeetTheTeamContent() {
               <Box
                 contentEditable
                 suppressContentEditableWarning
-                onBlur={(e) => { const t = (e.target as HTMLElement)?.textContent ?? ''; setHeroDesc(t); }}
+                onBlur={(e) => { const t = (e.target as HTMLElement)?.innerText ?? ''; setHeroDesc(t); }}
                 sx={{
                   fontSize: '1.25rem', // text-xl
                   fontWeight: 300, // font-light
@@ -481,7 +481,7 @@ export default function MeetTheTeamContent() {
                   px: 1,
                   py: 0.3,
                   borderRadius: 0.5,
-                  transition: 'background-color 0.15s',
+                  transition: 'background-color 0.15s', whiteSpace: 'pre-line',
                   '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
                   '&:focus': {
                     backgroundColor: 'rgba(255,255,255,0.08)',

@@ -394,7 +394,7 @@ export default function ContactTab() {
           <Box
             contentEditable
             suppressContentEditableWarning
-            onBlur={(e) => { const t = (e.target as HTMLElement)?.textContent ?? ''; setFormData(prev => ({ ...prev, cta_title: t })); }}
+            onBlur={(e) => { const t = (e.target as HTMLElement)?.innerText ?? ''; setFormData(prev => ({ ...prev, cta_title: t })); }}
             sx={{
               fontSize: 14,
               textTransform: 'uppercase',
@@ -421,7 +421,7 @@ export default function ContactTab() {
           <Box
             contentEditable
             suppressContentEditableWarning
-            onBlur={(e) => { const t = (e.target as HTMLElement)?.textContent ?? ''; setFormData(prev => ({ ...prev, cta_text_white: t })); }}
+            onBlur={(e) => { const t = (e.target as HTMLElement)?.innerText ?? ''; setFormData(prev => ({ ...prev, cta_text_white: t })); }}
             sx={{
               fontSize: { xs: '1.6rem', md: '2.25rem' },
               fontWeight: 700,
@@ -447,7 +447,7 @@ export default function ContactTab() {
           <Box
             contentEditable
             suppressContentEditableWarning
-            onBlur={(e) => { const t = (e.target as HTMLElement)?.textContent ?? ''; setFormData(prev => ({ ...prev, cta_text_blue: t })); }}
+            onBlur={(e) => { const t = (e.target as HTMLElement)?.innerText ?? ''; setFormData(prev => ({ ...prev, cta_text_blue: t })); }}
             sx={{
               fontSize: { xs: '1.6rem', md: '2.25rem' },
               fontWeight: 700,

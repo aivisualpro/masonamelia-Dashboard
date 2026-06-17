@@ -154,10 +154,10 @@ export default function SkynetTab() {
     <Box
       contentEditable
       suppressContentEditableWarning
-      onBlur={(e) => onUpdate((e.target as HTMLElement)?.textContent ?? '')}
+      onBlur={(e) => onUpdate((e.target as HTMLElement)?.innerText ?? '')}
       sx={{
         outline: 'none', cursor: 'text', px: 1, py: 0.3, borderRadius: 0.5,
-        transition: 'background-color 0.15s',
+        transition: 'background-color 0.15s', whiteSpace: 'pre-line',
         '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
         '&:focus': { backgroundColor: 'rgba(255,255,255,0.08)', boxShadow: '0 0 0 1px rgba(38,138,224,0.4)' },
         ...sxOverride,
@@ -279,7 +279,7 @@ export default function SkynetTab() {
               <Typography
                 contentEditable
                 suppressContentEditableWarning
-                onBlur={(e) => setTimelineTitleBlue((e.target as HTMLElement)?.textContent ?? '')}
+                onBlur={(e) => setTimelineTitleBlue((e.target as HTMLElement)?.innerText ?? '')}
                 sx={{
                   fontSize: '2.5rem', fontWeight: 700, lineHeight: 1.1,
                   background: 'linear-gradient(to right, #1777cb, #278AE0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
