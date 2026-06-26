@@ -238,7 +238,7 @@ export default function Header() {
               alt="Mason Amelia"
               width={100}
               height={30}
-              style={{ height: 30, width: 'auto' }}
+              style={{ height: 30, width: 100 }}
             />
           </Link>
           <IconButton onClick={closeMobile} size="small" aria-label="close menu">

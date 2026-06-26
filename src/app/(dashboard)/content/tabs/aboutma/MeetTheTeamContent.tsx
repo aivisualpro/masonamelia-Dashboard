@@ -97,7 +97,7 @@ export default function MeetTheTeamContent() {
     }
   }, [contact]);
 
-  const saveHero = async () => {
+  const saveHero = React.useCallback(async () => {
     setHeroSaving(true);
     try {
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/contact`, {
@@ -113,7 +113,7 @@ export default function MeetTheTeamContent() {
     } finally {
       setHeroSaving(false);
     }
-  };
+  }, [contact, heroTitle, heroDesc, heroBgImage, mutateContact]);
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [formData, setFormData] = React.useState(initialFormState);
@@ -147,7 +147,7 @@ export default function MeetTheTeamContent() {
     const handler = () => saveHero();
     window.addEventListener('save-contact', handler);
     return () => window.removeEventListener('save-contact', handler);
-  });
+  }, [saveHero]);
 
   // ── Add Dialog ────────────────────────────────────────────────
   const openAddDialog = React.useCallback(() => { setFormData(initialFormState); setAddPicFile(null); setAddDetailPicFile(null); setDialogOpen(true); }, []);
