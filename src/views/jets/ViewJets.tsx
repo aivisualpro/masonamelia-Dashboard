@@ -312,6 +312,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
 
   const router = useRouter();
   const [addOpen, setAddOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
 
   // Listen for header button event
   React.useEffect(() => {
@@ -437,8 +438,17 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     });
   }, []);
 
-  const visibleRows = React.useMemo(() => sortedRows.slice(0, visibleCount), [sortedRows, visibleCount]);
-  const hasMore = visibleCount < sortedRows.length;
+  const filteredRows = React.useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return sortedRows;
+    return sortedRows.filter((r) =>
+      [r.title, r.model, r.status, r.category, r.location]
+        .some((v) => String(v || '').toLowerCase().includes(q))
+    );
+  }, [sortedRows, searchTerm]);
+
+  const visibleRows = React.useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount]);
+  const hasMore = visibleCount < filteredRows.length;
 
   // Infinite scroll via IntersectionObserver
   React.useEffect(() => {
@@ -446,14 +456,14 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
-          setVisibleCount((prev) => Math.min(prev + 20, rows.length));
+          setVisibleCount((prev) => Math.min(prev + 20, filteredRows.length));
         }
       },
       { root: scrollContainerRef.current, threshold: 0.1 }
     );
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [hasMore, loading, rows.length]);
+  }, [hasMore, loading, filteredRows.length]);
 
   const openConfirmSingle = React.useCallback((row: AircraftRow) => setConfirm({ open: true, mode: 'single', ids: [row.id], title: row.title || '' }), []);
   const closeConfirm = React.useCallback(() => setConfirm((c) => ({ ...c, open: false })), []);
@@ -525,6 +535,58 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
         border: `1px solid ${theme.palette.divider}`,
         borderRadius: 2,
       }}>
+        {/* ── Search toolbar ── */}
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          px: 2,
+          py: 1.25,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.background.paper,
+          flexShrink: 0,
+        }}>
+          <Box component="span" sx={{ color: theme.palette.text.disabled, display: 'flex', alignItems: 'center' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </Box>
+          <input
+            id="aircraft-search"
+            type="text"
+            placeholder="Search by title, model, status, make or location…"
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setVisibleCount(20); }}
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: 13,
+              color: theme.palette.text.primary,
+              fontFamily: 'inherit',
+            }}
+          />
+          {searchTerm && (
+            <Box
+              component="button"
+              onClick={() => { setSearchTerm(''); setVisibleCount(20); }}
+              sx={{
+                border: 'none', background: 'none', cursor: 'pointer', px: 1, py: 0.25,
+                borderRadius: 1, fontSize: 11, color: theme.palette.text.secondary,
+                '&:hover': { color: theme.palette.text.primary, bgcolor: alpha(theme.palette.text.primary, 0.06) },
+              }}
+            >
+              Clear
+            </Box>
+          )}
+          {searchTerm && (
+            <Box sx={{ fontSize: 12, color: theme.palette.text.disabled, whiteSpace: 'nowrap' }}>
+              {filteredRows.length} result{filteredRows.length !== 1 ? 's' : ''}
+            </Box>
+          )}
+        </Box>
+
         {/* Table scroll area */}
         <Box ref={scrollContainerRef} sx={{ flex: 1, overflow: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -618,7 +680,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
                     <td style={{ ...tdStyle, width: 70 }}>{row.year || '—'}</td>
                     <td style={{ ...tdStyle, width: 110 }}>{row.price && row.price !== 'Call' ? `$${numberFmt.format(Number(row.price))}` : 'Call'}</td>
                     <td style={{ ...tdStyle, width: 120 }}><StatusPill value={row.status} /></td>
-                    <td style={{ ...tdStyle, width: 110 }}>{row.category || '—'}</td> {/* Make */}
+                    <td style={{ ...tdStyle, width: 110 }}>{row.category || '—'}{/* Make */}</td>
                     <td style={{ ...tdStyle, width: 130 }}>{row.model || '—'}</td>
                     <td style={{ ...tdStyle, width: 110 }}>{row.airframe || '—'}</td>
                     <td style={{ ...tdStyle, width: 110 }}>{row.engine || '—'}</td>
@@ -662,7 +724,10 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
             color: theme.palette.text.secondary,
           }}>
             <span>
-              Showing <strong style={{ color: theme.palette.text.primary }}>{visibleRows.length}</strong> of <strong style={{ color: theme.palette.text.primary }}>{sortedRows.length}</strong> aircraft
+              Showing <strong style={{ color: theme.palette.text.primary }}>{visibleRows.length}</strong> of <strong style={{ color: theme.palette.text.primary }}>{filteredRows.length}</strong> aircraft
+              {searchTerm && rows.length !== filteredRows.length && (
+                <span style={{ opacity: 0.6 }}> (filtered from {rows.length})</span>
+              )}
             </span>
             {hasMore && (
               <span style={{ fontSize: 12, opacity: 0.6 }}>Scroll down to load more</span>

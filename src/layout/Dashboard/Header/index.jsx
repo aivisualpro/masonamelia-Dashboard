@@ -238,6 +238,7 @@ export default function Header() {
               alt="Mason Amelia"
               width={100}
               height={30}
+              priority
               style={{ height: 30, width: 100 }}
             />
           </Link>

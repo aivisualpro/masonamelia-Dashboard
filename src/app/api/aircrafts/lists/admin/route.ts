@@ -14,10 +14,12 @@ export async function GET(request: NextRequest) {
     
     const skip = (page - 1) * pageSize;
     
+    const filter = { isDeleted: { $ne: true } };
+
     // Run count + paginated query in parallel
     const [total, aircrafts] = await Promise.all([
-      Aircraft.countDocuments(),
-      Aircraft.find()
+      Aircraft.countDocuments(filter),
+      Aircraft.find(filter)
         .select('title year price status category airframe engine engineTwo propeller propellerTwo location featuredImage images contactAgent createdAt')
         .populate('category', 'name')
         .sort({ createdAt: -1 })

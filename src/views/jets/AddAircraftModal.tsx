@@ -197,7 +197,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
       fd.append('year', String(values.year || ''));
       fd.append('price', String(values.price || ''));
       fd.append('status', values.status);
-      fd.append('category', values.category);
+      if (values.category) fd.append('category', values.category);
       fd.append('location', values.location);
       fd.append('latitude', String(values.latitude || ''));
       fd.append('longitude', String(values.longitude || ''));
@@ -214,7 +214,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
       images.forEach(f => fd.append('images', f));
       if (featuredImage[0]) fd.append('featuredImage', featuredImage[0]);
 
-      const resp = await fetch('https://skynet-jet-dashboard-server.onrender.com/api/aircrafts', {
+      const resp = await fetch('/api/aircrafts', {
         method: 'POST',
         headers: { Accept: 'application/json' },
         body: fd,

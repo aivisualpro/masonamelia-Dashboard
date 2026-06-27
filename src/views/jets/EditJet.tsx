@@ -14,10 +14,15 @@ import {
   LinearProgress,
   Snackbar,
   Alert,
-  AlertColor
+  AlertColor,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Delete as DeleteIcon, Upload as UploadIcon, Send as SendIcon, ArrowBack as ArrowBackIcon, DragIndicator as DragIndicatorIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, DeleteForever as DeleteForeverIcon, Upload as UploadIcon, Send as SendIcon, ArrowBack as ArrowBackIcon, DragIndicator as DragIndicatorIcon } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -223,6 +228,8 @@ export default function EditJet({ id }: EditJetProps) {
   const [uploading, setUploading] = useState(false);
   const [snack, setSnack] = useState<SnackState>({ open: false, msg: '', severity: 'success' });
   const [categories, setCategories] = useState<Category[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const defaultSectionState = useMemo(() => {
     const m: Record<SectionKey, string> = {} as Record<SectionKey, string>;
@@ -284,6 +291,27 @@ export default function EditJet({ id }: EditJetProps) {
   useEffect(() => {
     setValue('status', 'for-sale');
   }, [setValue]);
+
+  // Soft delete — confirmation via dialog
+  const handleSoftDelete = async () => {
+    setDeleting(true);
+    try {
+      const resp = await fetch(`${API_BASE}/api/aircrafts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDeleted: true }),
+      });
+      const json = await resp.json();
+      if (!resp.ok || json?.success === false) throw new Error(json?.message || 'Failed to delete');
+      setDeleteDialogOpen(false);
+      setSnack({ open: true, severity: 'success', msg: '✅ Aircraft removed from the showroom.' });
+      setTimeout(() => router.push('/aircraft'), 1500);
+    } catch (e) {
+      setSnack({ open: true, severity: 'error', msg: (e as Error).message });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // gallery file selection
   const onImagesChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -704,11 +732,51 @@ export default function EditJet({ id }: EditJetProps) {
               >
                 Reset
               </Button>
+              <Button
+                type="button"
+                variant="outlined"
+                color="error"
+                onClick={() => setDeleteDialogOpen(true)}
+                startIcon={<DeleteIcon />}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  py: 1.25,
+                  borderRadius: 2,
+                  minWidth: 110,
+                }}
+              >
+                Delete
+              </Button>
             </Box>
           </Box>
 
         </Box>
       </form>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={deleting ? undefined : () => setDeleteDialogOpen(false)}>
+        <DialogTitle sx={{ fontWeight: 600 }}>Delete Aircraft</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this aircraft? It will be removed from the showroom and the aircraft list.
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting} variant="outlined" sx={{ textTransform: 'none' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSoftDelete}
+            disabled={deleting}
+            color="error"
+            variant="contained"
+            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteForeverIcon />}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            {deleting ? 'Deleting…' : 'Yes, Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
         <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>

@@ -40,6 +40,7 @@ const aircraftSchema = new mongoose.Schema(
     videoUrl: { type: String },
     location: { type: String },
     index: { type: Number },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

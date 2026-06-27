@@ -174,7 +174,7 @@ export default function AddJet() {
         return;
       }
 
-      const resp = await fetch('https://skynet-jet-dashboard-server.onrender.com/api/aircrafts', {
+      const resp = await fetch('/api/aircrafts', {
         method: 'POST',
         headers: { Accept: 'application/json' },
         body: fd
