@@ -213,6 +213,7 @@ export default function AddJet() {
             <Grid item xs={12} md={8}>
               <TextField
                 label="Title"
+                id="title"
                 fullWidth
                 required
                 {...register('title', { required: true })}
@@ -221,7 +222,7 @@ export default function AddJet() {
               />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField select label="Status" fullWidth {...register('status')}>
+              <TextField select label="Status" id="status" fullWidth {...register('status')}>
                 {STATUS?.map((s) => (
                   <MenuItem key={s.slug} value={s.slug}>
                     {s.name}
@@ -230,13 +231,13 @@ export default function AddJet() {
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Year" fullWidth {...register('year')} />
+              <TextField label="Year" id="year" fullWidth {...register('year')} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Price" fullWidth required {...register('price', { required: true })} />
+              <TextField label="Price" id="price" fullWidth required {...register('price', { required: true })} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField select label="Make" fullWidth {...register('category')}>
+              <TextField select label="Make" id="category" fullWidth {...register('category')}>
                 {categories?.map((s) => (
                   <MenuItem key={s?._id} value={s?._id}>
                     {s?.name}
@@ -245,31 +246,31 @@ export default function AddJet() {
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Location" fullWidth required {...register('location', { required: true })} />
+              <TextField label="Location" id="location" fullWidth required {...register('location', { required: true })} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Latitude" fullWidth required {...register('latitude', { required: true })} />
+              <TextField label="Latitude" id="latitude" fullWidth required {...register('latitude', { required: true })} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Longitude"  fullWidth required {...register('longitude', { required: true })} />
+              <TextField label="Longitude" id="longitude" fullWidth required {...register('longitude', { required: true })} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Airframe" type="number" fullWidth {...register('airframe')} />
+              <TextField label="Airframe" id="airframe" type="number" fullWidth {...register('airframe')} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Engine One" type="number" fullWidth {...register('engine')} />
+              <TextField label="Engine One" id="engine" type="number" fullWidth {...register('engine')} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Engine Two" type="number" fullWidth {...register('engineTwo')} />
+              <TextField label="Engine Two" id="engineTwo" type="number" fullWidth {...register('engineTwo')} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Propeller" type="number" fullWidth {...register('propeller')} />
+              <TextField label="Propeller" id="propeller" type="number" fullWidth {...register('propeller')} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="Propeller Two" type="number" fullWidth {...register('propellerTwo')} />
+              <TextField label="Propeller Two" id="propellerTwo" type="number" fullWidth {...register('propellerTwo')} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField label="List Index" type="number" fullWidth {...register('index', { required: true })} />
+              <TextField label="List Index" id="index" type="number" fullWidth {...register('index', { required: true })} />
             </Grid>
             <Grid item xs={12}>
               <Typography variant="subtitle1" className="mb-3 font-semibold">
@@ -292,13 +293,13 @@ export default function AddJet() {
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={4}>
-                <TextField label="Name" fullWidth {...register('agentName', { required: true })} />
+                <TextField label="Name" id="agentName" fullWidth {...register('agentName', { required: true })} />
               </Grid>
               <Grid item xs={12} md={4}>
-                <TextField label="Email" type="email" fullWidth {...register('agentEmail', { required: true })} />
+                <TextField label="Email" type="email" id="agentEmail" fullWidth {...register('agentEmail', { required: true })} />
               </Grid>
               <Grid item xs={12} md={4}>
-                <TextField label="Phone" fullWidth {...register('agentPhone', { required: true })} />
+                <TextField label="Phone" id="agentPhone" fullWidth {...register('agentPhone', { required: true })} />
               </Grid>
             </Grid>
           </div>
@@ -345,7 +346,7 @@ export default function AddJet() {
             <Typography variant="subtitle1" className="mb-4 font-semibold">
               Video URL
             </Typography>
-            <TextField label="Video URL" type="text" fullWidth {...register('videoUrl')} />
+            <TextField label="Video URL" id="videoUrl" type="text" fullWidth {...register('videoUrl')} />
           </Grid>
 
           {/* Featured Image (NEW) */}
@@ -357,6 +358,7 @@ export default function AddJet() {
               <Button variant="contained" component="label" startIcon={<UploadIcon />}>
                 Select Featured
                 <input
+                  id="featured-image-upload"
                   ref={featuredInputRef}
                   hidden
                   accept="image/*"
@@ -398,7 +400,7 @@ export default function AddJet() {
             <div className="flex items-center gap-3">
               <Button variant="contained" component="label" startIcon={<UploadIcon />}>
                 Select Images
-                <input hidden accept="image/*" type="file" multiple onChange={onImagesChange} />
+                <input id="gallery-images-upload" hidden accept="image/*" type="file" multiple onChange={onImagesChange} />
               </Button>
               <Chip label={`${images.length} selected`} />
             </div>

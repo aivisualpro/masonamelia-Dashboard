@@ -45,6 +45,7 @@ interface AircraftDoc {
   year?: number | string;
   price?: number | string;
   status?: string;
+  index?: number | string;
   category?: { name?: string };
   airframe?: string;
   engine?: string;
@@ -63,6 +64,7 @@ interface AircraftDoc {
 
 interface AircraftRow {
   id: string;
+  index: number | null;
   image: string;
   images: string[];
   title: string;
@@ -84,7 +86,7 @@ interface AircraftRow {
   _raw: AircraftDoc;
 }
 
-type SortKey = 'title' | 'model' | 'year' | 'price' | 'status' | 'category' | 'airframe' | 'location';
+type SortKey = 'index' | 'title' | 'model' | 'year' | 'price' | 'status' | 'category' | 'airframe' | 'location';
 type SortDir = 'asc' | 'desc';
 
 interface ConfirmState {
@@ -358,6 +360,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
 
       return {
         id: d._id || d.id || '',
+        index: toNum(d.index),
         image: d.featuredImage || '',
         images: allImages,
         title: d.title ?? '',
@@ -388,6 +391,11 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
       let aVal: any;
       let bVal: any;
       switch (sortKey) {
+        case 'index':
+          // nulls last
+          aVal = a.index ?? Infinity;
+          bVal = b.index ?? Infinity;
+          return aVal - bVal;
         case 'title':
           aVal = (a.title || '').toLowerCase();
           bVal = (b.title || '').toLowerCase();
@@ -473,8 +481,13 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     setDeleting(true);
     try {
       if (confirm.mode === 'single') {
-        await fetch(`${API_BASE}/delete/${confirm.ids[0]}`, { method: 'DELETE' });
+        await fetch(`${API_BASE}/${confirm.ids[0]}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isDeleted: true })
+        });
       } else {
+        // Bulk delete via bulkDelete route or multiple PATCH calls in parallel
         await fetch(BULK_DELETE_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -593,6 +606,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
             <thead>
               <tr>
                 {[
+                  { key: 'index' as SortKey, label: '#', width: 54 },
                   { key: 'title' as SortKey, label: 'Title', width: undefined },
                   { key: null, label: 'Image', width: 88 },
                   { key: 'year' as SortKey, label: 'Year', width: 70 },
@@ -633,13 +647,13 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={11} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none' }}>
+                  <td colSpan={12} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none' }}>
                     <CircularProgress size={28} />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none', color: theme.palette.text.secondary }}>
+                  <td colSpan={12} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none', color: theme.palette.text.secondary }}>
                     No aircraft found.
                   </td>
                 </tr>
@@ -651,6 +665,9 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                   >
+                    <td style={{ ...tdStyle, width: 54, textAlign: 'center', color: theme.palette.text.secondary, fontWeight: 500, fontSize: 12 }}>
+                      {row.index != null ? row.index : '—'}
+                    </td>
                     <td
                       style={{ ...tdStyle, fontWeight: 600, cursor: 'pointer' }}
                       onClick={() => router.push(`/aircraft/edit/${row.id}`)}

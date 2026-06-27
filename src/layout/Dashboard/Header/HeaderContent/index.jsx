@@ -16,6 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 
 import { ThemeModeContext } from '@/themes/index';
+import Search from './Search';
 
 const BTN_SX = {
   borderRadius: 1,
@@ -48,6 +49,8 @@ export default function HeaderContent() {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      {/* Autocomplete Search Bar */}
+      <Search />
 
       {/* Back button on detail pages */}
       {showBack && (

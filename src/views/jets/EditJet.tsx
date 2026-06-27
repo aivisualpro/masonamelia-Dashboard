@@ -456,6 +456,7 @@ export default function EditJet({ id }: EditJetProps) {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                 <TextField
                   label="Title"
+                  id="title"
                   fullWidth
                   required
                   {...tf}
@@ -465,14 +466,14 @@ export default function EditJet({ id }: EditJetProps) {
                 />
                 {/* Row 2: Year, Price, Make */}
                 <FieldRow>
-                  <TextField label="Year" type="number" fullWidth {...tf} {...register('year')} />
-                  <TextField label="Price" type="number" fullWidth required {...tf} {...register('price', { required: true })} />
+                  <TextField label="Year" id="year" type="number" fullWidth {...tf} {...register('year')} />
+                  <TextField label="Price" id="price" type="number" fullWidth required {...tf} {...register('price', { required: true })} />
                   <Controller
                     name="category"
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <TextField select label="Make" fullWidth {...tf} {...field}>
+                      <TextField select label="Make" id="category" fullWidth {...tf} {...field}>
                         {categories?.map((s) => (
                           <MenuItem key={s?._id} value={String(s?._id)}>{s?.name}</MenuItem>
                         ))}
@@ -486,9 +487,9 @@ export default function EditJet({ id }: EditJetProps) {
             {/* Row 3: Location */}
             <SectionCard title="Location">
               <FieldRow>
-                <TextField label="Location" fullWidth required {...tf} {...register('location', { required: true })} />
-                <TextField label="Latitude" fullWidth {...tf} {...register('latitude')} />
-                <TextField label="Longitude" fullWidth {...tf} {...register('longitude')} />
+                <TextField label="Location" id="location" fullWidth required {...tf} {...register('location', { required: true })} />
+                <TextField label="Latitude" id="latitude" fullWidth {...tf} {...register('latitude')} />
+                <TextField label="Longitude" id="longitude" fullWidth {...tf} {...register('longitude')} />
               </FieldRow>
             </SectionCard>
 
@@ -496,20 +497,20 @@ export default function EditJet({ id }: EditJetProps) {
             <SectionCard title="Mechanical">
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                 <FieldRow>
-                  <TextField label="Airframe" type="number" fullWidth {...tf} {...register('airframe')} />
-                  <TextField label="Engine One" type="number" fullWidth {...tf} {...register('engine')} />
-                  <TextField label="Engine Two" type="number" fullWidth {...tf} {...register('engineTwo')} />
+                  <TextField label="Airframe" id="airframe" type="number" fullWidth {...tf} {...register('airframe')} />
+                  <TextField label="Engine One" id="engine" type="number" fullWidth {...tf} {...register('engine')} />
+                  <TextField label="Engine Two" id="engineTwo" type="number" fullWidth {...tf} {...register('engineTwo')} />
                 </FieldRow>
                 {/* Row 5: Propellers & Status */}
                 <FieldRow>
-                  <TextField label="Propeller One" type="number" fullWidth {...tf} {...register('propeller')} />
-                  <TextField label="Propeller Two" type="number" fullWidth {...tf} {...register('propellerTwo')} />
+                  <TextField label="Propeller One" id="propeller" type="number" fullWidth {...tf} {...register('propeller')} />
+                  <TextField label="Propeller Two" id="propellerTwo" type="number" fullWidth {...tf} {...register('propellerTwo')} />
                   <Controller
                     name="status"
                     control={control}
                     defaultValue="for-sale"
                     render={({ field }) => (
-                      <TextField select label="Status" fullWidth {...tf} {...field}>
+                      <TextField select label="Status" id="status" fullWidth {...tf} {...field}>
                         {STATUS.map((s) => (
                           <MenuItem key={s} value={s}>{s.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</MenuItem>
                         ))}
@@ -523,9 +524,9 @@ export default function EditJet({ id }: EditJetProps) {
             {/* Row 6: Contact Agent */}
             <SectionCard title="Contact Agent">
               <FieldRow>
-                <TextField label="Current Agent" fullWidth {...tf} {...register('agentName')} />
-                <TextField label="Email" type="email" fullWidth {...tf} {...register('agentEmail')} />
-                <TextField label="Phone" fullWidth {...tf} {...register('agentPhone')} />
+                <TextField label="Current Agent" id="agentName" fullWidth {...tf} {...register('agentName')} />
+                <TextField label="Email" type="email" id="agentEmail" fullWidth {...tf} {...register('agentEmail')} />
+                <TextField label="Phone" id="agentPhone" fullWidth {...tf} {...register('agentPhone')} />
               </FieldRow>
             </SectionCard>
 
@@ -578,7 +579,7 @@ export default function EditJet({ id }: EditJetProps) {
 
             {/* Index */}
             <SectionCard title="Listing Settings">
-              <TextField label="List Index" type="number" fullWidth {...tf} {...register('index')} />
+              <TextField label="List Index" id="index" type="number" fullWidth {...tf} {...register('index')} />
             </SectionCard>
           </Box>
 
@@ -587,7 +588,7 @@ export default function EditJet({ id }: EditJetProps) {
 
             {/* Video URL */}
             <SectionCard title="Video">
-              <TextField label="Video URL" type="text" fullWidth {...tf} {...register('videoUrl')} />
+              <TextField label="Video URL" id="videoUrl" type="text" fullWidth {...tf} {...register('videoUrl')} />
             </SectionCard>
 
             {/* Featured Image */}
@@ -595,7 +596,7 @@ export default function EditJet({ id }: EditJetProps) {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                 <Button variant="contained" component="label" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }}>
                   {featuredLocal ? 'Change' : 'Upload'}
-                  <input ref={featuredInputRef} hidden accept="image/*" type="file" onChange={onFeaturedChange} />
+                  <input id="featured-image-upload" ref={featuredInputRef} hidden accept="image/*" type="file" onChange={onFeaturedChange} />
                 </Button>
                 <Chip size="small" label={featuredLocal ? '1 new' : featuredExisting ? 'Existing' : 'None'} />
                 {featuredLocal && (
@@ -618,7 +619,7 @@ export default function EditJet({ id }: EditJetProps) {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                 <Button variant="contained" component="label" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }}>
                   Add Images
-                  <input hidden accept="image/*" type="file" multiple onChange={onImagesChange} />
+                  <input id="gallery-images-upload" hidden accept="image/*" type="file" multiple onChange={onImagesChange} />
                 </Button>
                 <Chip size="small" label={`${imagesExisting.length + imagesLocal.length} total`} />
               </Box>
