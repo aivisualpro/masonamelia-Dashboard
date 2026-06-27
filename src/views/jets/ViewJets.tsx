@@ -26,6 +26,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { useRouter } from 'next/navigation';
 import { purple } from '@mui/material/colors';
 import AddAircraftModal from './AddAircraftModal';
@@ -316,6 +317,15 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
   const [addOpen, setAddOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
 
+  // ── Drag & drop state ──
+  const dragRowId = React.useRef<string | null>(null);
+  const dragOverRowId = React.useRef<string | null>(null);
+  const [dragActiveId, setDragActiveId] = React.useState<string | null>(null);
+  const [dragOverId, setDragOverId] = React.useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = React.useState(false);
+  // Tracks the drag-reordered sequence of IDs; overrides sort pipeline when set
+  const [customOrderIds, setCustomOrderIds] = React.useState<string[] | null>(null);
+
   // Listen for header button event
   React.useEffect(() => {
     const handler = () => setAddOpen(true);
@@ -351,6 +361,30 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     );
   }, []);
 
+  // ── Drag & Drop handlers ──
+  const handleDragStart = React.useCallback((e: React.DragEvent, id: string) => {
+    dragRowId.current = id;
+    setDragActiveId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id); // required for Firefox
+  }, []);
+
+  const handleDragOver = React.useCallback((e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverRowId.current !== id) {
+      dragOverRowId.current = id;
+      setDragOverId(id);
+    }
+  }, []);
+
+  const handleDragEnd = React.useCallback(() => {
+    setDragActiveId(null);
+    setDragOverId(null);
+  }, []);
+
+  // handleDrop is defined after filteredRows below
+
   const rows: AircraftRow[] = React.useMemo(() => {
     return (aircrafts || []).map((d) => {
       const toNum = (v: unknown): number | null => (v === undefined || v === null || v === '' ? null : Number(v));
@@ -384,15 +418,23 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     });
   }, [aircrafts]);
 
-  // Sorting logic
+  // Sorting logic — bypassed when customOrderIds is active
   const sortedRows = React.useMemo(() => {
+    // If user has set a drag order, skip sorting and use that order
+    if (customOrderIds) {
+      const idxMap = new Map(customOrderIds.map((id, i) => [id, i]));
+      return [...rows].sort((a, b) => {
+        const ai = idxMap.has(a.id) ? idxMap.get(a.id)! : 999999;
+        const bi = idxMap.has(b.id) ? idxMap.get(b.id)! : 999999;
+        return ai - bi;
+      });
+    }
     if (!sortKey) return rows;
     const sorted = [...rows].sort((a, b) => {
       let aVal: any;
       let bVal: any;
       switch (sortKey) {
         case 'index':
-          // nulls last
           aVal = a.index ?? Infinity;
           bVal = b.index ?? Infinity;
           return aVal - bVal;
@@ -433,9 +475,11 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
       }
     });
     return sortDir === 'desc' ? sorted.reverse() : sorted;
-  }, [rows, sortKey, sortDir]);
+  }, [rows, sortKey, sortDir, customOrderIds]);
 
   const handleSort = React.useCallback((key: SortKey) => {
+    // Clicking a sort column clears any custom drag order
+    setCustomOrderIds(null);
     setSortKey((prev) => {
       if (prev === key) {
         setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -445,6 +489,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
       return key;
     });
   }, []);
+
 
   const filteredRows = React.useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -457,6 +502,50 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
 
   const visibleRows = React.useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount]);
   const hasMore = visibleCount < filteredRows.length;
+
+  // handleDrop lives here so it can close over filteredRows (current visual order)
+  const handleDrop = React.useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const fromId = dragRowId.current;
+    dragRowId.current = null;
+    dragOverRowId.current = null;
+    setDragActiveId(null);
+    setDragOverId(null);
+    if (!fromId || fromId === targetId) return;
+
+    // Reorder the VISUAL list (what the user sees), not the raw aircrafts state
+    const visual = [...filteredRows];
+    const fromIdx = visual.findIndex((r) => r.id === fromId);
+    const toIdx = visual.findIndex((r) => r.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const [moved] = visual.splice(fromIdx, 1);
+    visual.splice(toIdx, 0, moved);
+
+    // 1. Set custom order so the pipeline renders in drag order (overrides sortKey)
+    setCustomOrderIds(visual.map((r) => r.id));
+
+    // 2. Update aircraft state optimistically with new indices
+    const newIndexMap = new Map(visual.map((r, i) => [r.id, i + 1]));
+    setAircrafts((prev) =>
+      prev.map((d) => {
+        const id = d._id || d.id || '';
+        return newIndexMap.has(id) ? { ...d, index: newIndexMap.get(id) } : d;
+      })
+    );
+
+    // 3. Persist new indices to the API
+    setSavingOrder(true);
+    Promise.all(
+      visual.map((r, i) => {
+        const fd = new FormData();
+        fd.append('index', String(i + 1));
+        return fetch(`${API_BASE}/update/${r.id}`, { method: 'PUT', body: fd });
+      })
+    )
+      .then(() => setSavingOrder(false))
+      .catch((err) => { console.error('Failed to save order:', err); setSavingOrder(false); });
+  }, [filteredRows]);
 
   // Infinite scroll via IntersectionObserver
   React.useEffect(() => {
@@ -598,6 +687,12 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
               {filteredRows.length} result{filteredRows.length !== 1 ? 's' : ''}
             </Box>
           )}
+          {savingOrder && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, ml: 'auto', fontSize: 12, color: theme.palette.text.secondary, whiteSpace: 'nowrap' }}>
+              <CircularProgress size={12} />
+              Saving order…
+            </Box>
+          )}
         </Box>
 
         {/* Table scroll area */}
@@ -606,6 +701,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
             <thead>
               <tr>
                 {[
+                  { key: null, label: '', width: 36 }, // drag handle
                   { key: 'index' as SortKey, label: '#', width: 54 },
                   { key: 'title' as SortKey, label: 'Title', width: undefined },
                   { key: null, label: 'Image', width: 88 },
@@ -647,13 +743,13 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={12} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none' }}>
+                  <td colSpan={13} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none' }}>
                     <CircularProgress size={28} />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={12} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none', color: theme.palette.text.secondary }}>
+                  <td colSpan={13} style={{ ...tdStyle, textAlign: 'center', height: 200, borderBottom: 'none', color: theme.palette.text.secondary }}>
                     No aircraft found.
                   </td>
                 </tr>
@@ -661,10 +757,38 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
                 visibleRows.map((row) => (
                   <tr
                     key={row.id}
-                    style={{ transition: 'background-color 0.15s ease' }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+                    onDragOver={(e) => handleDragOver(e, row.id)}
+                    onDrop={(e) => handleDrop(e, row.id)}
+                    onDragLeave={(e) => {
+                      // Only clear if leaving the row entirely (not entering a child)
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        if (dragOverRowId.current === row.id) {
+                          dragOverRowId.current = null;
+                          setDragOverId(null);
+                        }
+                      }
+                    }}
+                    style={{
+                      transition: 'background-color 0.15s ease, opacity 0.15s ease',
+                      opacity: dragActiveId === row.id ? 0.35 : 1,
+                      backgroundColor: dragOverId === row.id && dragActiveId !== row.id
+                        ? (isDark ? 'rgba(99,102,241,0.18)' : 'rgba(99,102,241,0.1)')
+                        : 'transparent',
+                      boxShadow: dragOverId === row.id && dragActiveId !== row.id
+                        ? `inset 0 2px 0 rgba(99,102,241,0.6)`
+                        : 'none',
+                    }}
                   >
+                    {/* Drag handle — only this element is draggable */}
+                    <td
+                      draggable
+                      onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, row.id); }}
+                      onDragEnd={(e) => { e.stopPropagation(); handleDragEnd(); }}
+                      style={{ ...tdStyle, width: 36, textAlign: 'center', padding: '0 4px', cursor: 'grab', color: theme.palette.text.disabled, userSelect: 'none' }}
+                    >
+                      <DragIndicatorIcon sx={{ fontSize: 18, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                    </td>
+                    {/* Index number */}
                     <td style={{ ...tdStyle, width: 54, textAlign: 'center', color: theme.palette.text.secondary, fontWeight: 500, fontSize: 12 }}>
                       {row.index != null ? row.index : '—'}
                     </td>

@@ -47,10 +47,13 @@ export default function HeaderContent() {
   const showAddCategory = pathname === '/make';
   const showBack = pathname.startsWith('/aircraft/edit') || pathname.startsWith('/aircraft/add');
 
+  // Hide header search on pages that have their own search bar
+  const hideSearch = pathname === '/aircraft';
+
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      {/* Autocomplete Search Bar */}
-      <Search />
+      {/* Autocomplete Search Bar — hidden on pages with inline search */}
+      {!hideSearch && <Search />}
 
       {/* Back button on detail pages */}
       {showBack && (

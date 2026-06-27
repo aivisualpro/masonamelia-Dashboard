@@ -22,7 +22,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Delete as DeleteIcon, DeleteForever as DeleteForeverIcon, Upload as UploadIcon, Send as SendIcon, ArrowBack as ArrowBackIcon, DragIndicator as DragIndicatorIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, DeleteForever as DeleteForeverIcon, Upload as UploadIcon, Send as SendIcon, ArrowBack as ArrowBackIcon, DragIndicator as DragIndicatorIcon, Download as DownloadIcon } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -224,6 +224,7 @@ export default function EditJet({ id }: EditJetProps) {
   const [featuredExisting, setFeaturedExisting] = useState<string | null>(null);
   const [featuredLocal, setFeaturedLocal] = useState<File | null>(null);
   const featuredInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
   const [snack, setSnack] = useState<SnackState>({ open: false, msg: '', severity: 'success' });
@@ -359,6 +360,25 @@ export default function EditJet({ id }: EditJetProps) {
     if (featuredInputRef.current) featuredInputRef.current.value = '';
   };
 
+  // download helper — fetches image as blob and triggers native download
+  const downloadImage = async (url: string, filename?: string) => {
+    try {
+      const resp = await fetch(url, { mode: 'cors' });
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || url.split('/').pop() || 'image';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      // fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
   // Submit → UPDATE
   const onSubmit = async (values: FormValues) => {
     try {
@@ -416,6 +436,13 @@ export default function EditJet({ id }: EditJetProps) {
       }
 
       setSnack({ open: true, severity: 'success', msg: 'Aircraft updated successfully' });
+
+      // Update local state from the saved document so previews reflect new uploads
+      const saved = (body as any)?.data;
+      if (saved) {
+        if (saved.featuredImage) setFeaturedExisting(saved.featuredImage);
+        if (Array.isArray(saved.images)) setImagesExisting(saved.images);
+      }
       setImagesLocal([]);
       clearFeaturedLocal();
     } catch (e) {
@@ -594,22 +621,36 @@ export default function EditJet({ id }: EditJetProps) {
             {/* Featured Image */}
             <SectionCard title="Featured Image">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <Button variant="contained" component="label" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }}>
+                <input id="featured-image-upload" ref={featuredInputRef} accept="image/*" type="file" onChange={onFeaturedChange} style={{ display: 'none' }} />
+                <Button variant="contained" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }} onClick={() => featuredInputRef.current?.click()}>
                   {featuredLocal ? 'Change' : 'Upload'}
-                  <input id="featured-image-upload" ref={featuredInputRef} hidden accept="image/*" type="file" onChange={onFeaturedChange} />
                 </Button>
-                <Chip size="small" label={featuredLocal ? '1 new' : featuredExisting ? 'Existing' : 'None'} />
                 {featuredLocal && (
                   <IconButton size="small" color="error" onClick={clearFeaturedLocal}><DeleteIcon fontSize="small" /></IconButton>
                 )}
               </Box>
               {(featuredLocal || featuredExisting) && (
-                <Box sx={{ borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
+                <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
                   <img
                     src={featuredLocal ? URL.createObjectURL(featuredLocal) : (featuredExisting || '')}
                     alt="Featured"
                     style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }}
                   />
+                  {/* Download button */}
+                  {!featuredLocal && featuredExisting && (
+                    <IconButton
+                      size="small"
+                      onClick={() => downloadImage(featuredExisting, 'featured-image')}
+                      sx={{
+                        position: 'absolute', bottom: 8, right: 8,
+                        backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff',
+                        '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
+                        width: 32, height: 32,
+                      }}
+                    >
+                      <DownloadIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  )}
                 </Box>
               )}
             </SectionCard>
@@ -617,9 +658,9 @@ export default function EditJet({ id }: EditJetProps) {
             {/* Gallery Images */}
             <SectionCard title="Gallery Images">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <Button variant="contained" component="label" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }}>
+                <input id="gallery-images-upload" accept="image/*" type="file" multiple onChange={onImagesChange} style={{ display: 'none' }} ref={galleryInputRef} />
+                <Button variant="contained" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }} onClick={() => galleryInputRef.current?.click()}>
                   Add Images
-                  <input id="gallery-images-upload" hidden accept="image/*" type="file" multiple onChange={onImagesChange} />
                 </Button>
                 <Chip size="small" label={`${imagesExisting.length + imagesLocal.length} total`} />
               </Box>
@@ -666,6 +707,20 @@ export default function EditJet({ id }: EditJetProps) {
                       }}>
                         <DragIndicatorIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
                       </Box>
+                      {/* Download button */}
+                      <IconButton
+                        size="small"
+                        onClick={() => downloadImage(url, `image-${idx + 1}`)}
+                        sx={{
+                          position: 'absolute', top: 6, right: 36,
+                          backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff',
+                          '&:hover': { backgroundColor: 'rgba(0,0,0,0.8)' },
+                          width: 28, height: 28,
+                        }}
+                      >
+                        <DownloadIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                      {/* Delete button */}
                       <IconButton
                         size="small"
                         onClick={() => removeExistingImage(idx)}
