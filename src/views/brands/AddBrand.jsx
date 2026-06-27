@@ -76,12 +76,12 @@ const AddBrand = () => {
             >
                 <input
                     type="file"
-                    // accept="image/*"
+                    accept="image/png"
                     name="logo"
                     hidden
                     onChange={handleImageChange}
                 />
-                {image ? "Change Image" : "Upload Image"}
+                {image ? "Change Image" : "Upload PNG Logo"}
             </Button> 
 
             {/* Add Button */}

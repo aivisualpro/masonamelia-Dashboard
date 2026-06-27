@@ -10,6 +10,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import DownloadIcon from "@mui/icons-material/Download";
 import { Stack } from "@mui/system";
 import { useNavigate } from "react-router-dom";
 import { getBrands, deleteBrand, deleteBrandsByBulk } from "../../api/brand.api";
@@ -47,6 +48,23 @@ const ViewBrands = () => {
   };
 
   useEffect(() => { fetchBrands(); }, []);
+
+  const downloadImage = async (url, filename) => {
+    try {
+      const resp = await fetch(url, { mode: 'cors' });
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || url.split('/').pop() || 'logo';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank');
+    }
+  };
 
   // Build grid rows from raw data
   const rows = useMemo(
@@ -115,6 +133,11 @@ const ViewBrands = () => {
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5} alignItems="center">
+          <Tooltip title="Download">
+            <IconButton size="small" onClick={() => downloadImage(params.row.logo, `logo-${params.row.id}.png`)}>
+              <DownloadIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Edit">
             <IconButton size="small" onClick={() => navigate(`/logo-ticker/edit/${params.row.id}`)}> 
               <EditIcon fontSize="small" />

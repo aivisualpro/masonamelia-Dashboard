@@ -18,6 +18,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DownloadIcon from '@mui/icons-material/Download';
 import axios from 'axios';
 import { useBrands } from '@/api/hooks';
 
@@ -131,13 +132,30 @@ export default function BrandsPage() {
     }
   };
 
+  const downloadImage = async (url: string, filename?: string) => {
+    try {
+      const resp = await fetch(url, { mode: 'cors' });
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || url.split('/').pop() || 'logo.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank');
+    }
+  };
+
   return (
     <Box>
       {/* Hidden file input for editing cards */}
       <input
         ref={editInputRef}
         type="file"
-        accept="image/*"
+        accept="image/png"
         hidden
         onChange={handleEditFileChange}
       />
@@ -223,6 +241,21 @@ export default function BrandsPage() {
                     transition: 'opacity 0.15s ease',
                   }}
                 >
+                  <Tooltip title="Download">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); downloadImage(brand.logo, `brand-${brand._id}.png`); }}
+                      sx={{
+                        bgcolor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
+                        backdropFilter: 'blur(4px)',
+                        '&:hover': {
+                          bgcolor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,1)',
+                        },
+                      }}
+                    >
+                      <DownloadIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Replace Image">
                     <IconButton
                       size="small"
@@ -299,7 +332,7 @@ export default function BrandsPage() {
             <input
               ref={addInputRef}
               type="file"
-              accept="image/*"
+              accept="image/png"
               hidden
               onChange={handleAddFileChange}
             />
@@ -340,7 +373,7 @@ export default function BrandsPage() {
                     Click to upload brand logo
                   </Typography>
                   <Typography variant="caption" color="text.disabled">
-                    PNG, JPG, SVG, or WEBP
+                    PNG only (transparent background recommended)
                   </Typography>
                 </Box>
               )}
