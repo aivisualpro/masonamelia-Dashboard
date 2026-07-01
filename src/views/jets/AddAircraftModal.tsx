@@ -4,7 +4,7 @@ import * as React from 'react';
 import {
   Dialog, DialogContent,
   Box, Grid, TextField, MenuItem, Button, Typography,
-  Tabs, Tab, IconButton, LinearProgress,
+  Tabs, Tab, IconButton, LinearProgress, CircularProgress,
   Divider, Stepper, Step, StepLabel, Alert, Snackbar
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -533,13 +533,16 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
 
         {/* Upload progress */}
         {uploading && (
-          <Box sx={{ flexShrink: 0, px: 3, pt: 1.5, pb: 1 }}>
+          <Box sx={{ flexShrink: 0, px: 3, pt: 1.5, pb: 1, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1, mx: 2, mt: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-              <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary }}>
-                {uploadProgress.label || 'Preparing…'}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} thickness={5} sx={{ color: theme.palette.primary.main }} />
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                  {uploadProgress.label || 'Preparing…'}
+                </Typography>
+              </Box>
               {uploadProgress.total > 0 && (
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: theme.palette.primary.main }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: theme.palette.primary.main }}>
                   {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
                 </Typography>
               )}
@@ -547,7 +550,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
             <LinearProgress
               variant={uploadProgress.total > 0 ? 'determinate' : 'indeterminate'}
               value={uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : undefined}
-              sx={{ borderRadius: 1 }}
+              sx={{ borderRadius: 1, height: 5 }}
             />
           </Box>
         )}

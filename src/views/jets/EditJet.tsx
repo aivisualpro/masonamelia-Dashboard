@@ -522,13 +522,31 @@ export default function EditJet({ id }: EditJetProps) {
   return (
     <Box sx={{ flex: 1, overflow: 'auto' }}>
       {uploading && (
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-            <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary }}>
-              {uploadProgress.label || 'Preparing…'}
-            </Typography>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1400,
+            bgcolor: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(8px)',
+            px: 3,
+            py: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <CircularProgress size={18} thickness={5} sx={{ color: theme.palette.primary.main }} />
+              <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>
+                {uploadProgress.label || 'Preparing…'}
+              </Typography>
+            </Box>
             {uploadProgress.total > 0 && (
-              <Typography sx={{ fontSize: 12, fontWeight: 600, color: theme.palette.primary.main }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: theme.palette.primary.main }}>
                 {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
               </Typography>
             )}
@@ -536,7 +554,7 @@ export default function EditJet({ id }: EditJetProps) {
           <LinearProgress
             variant={uploadProgress.total > 0 ? 'determinate' : 'indeterminate'}
             value={uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : undefined}
-            sx={{ borderRadius: 1 }}
+            sx={{ borderRadius: 1, height: 6 }}
           />
         </Box>
       )}
