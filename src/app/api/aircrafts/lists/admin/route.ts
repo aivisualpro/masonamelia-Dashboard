@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const [total, aircrafts] = await Promise.all([
       Aircraft.countDocuments(filter),
       Aircraft.find(filter)
-        .select('title year price status category airframe engine engineTwo propeller propellerTwo location featuredImage images contactAgent index createdAt')
+        .select('title slug year price status category airframe engine engineTwo propeller propellerTwo location featuredImage images contactAgent index createdAt')
         .populate('category', 'name')
         .sort({ index: 1, createdAt: -1 })
         .skip(skip)

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const aircraftSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
+    slug: { type: String, unique: true, sparse: true },
     year: { type: Number },
     price: { type: Number },
     status: {
@@ -51,5 +52,6 @@ aircraftSchema.index({ status: 1 });                    // Status filter + analy
 aircraftSchema.index({ status: 1, price: 1 });          // Analytics: inventory value aggregation
 aircraftSchema.index({ category: 1 });                  // Category lookups & aggregation
 aircraftSchema.index({ createdAt: -1, status: 1 });     // Combined sort + filter
+aircraftSchema.index({ slug: 1 });                      // Slug-based lookups
 
 module.exports = mongoose.models.Aircraft || mongoose.model("Aircraft", aircraftSchema);

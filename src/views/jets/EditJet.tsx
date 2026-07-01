@@ -67,6 +67,7 @@ interface ContactAgent {
 
 interface AircraftDoc {
   title?: string;
+  slug?: string;
   year?: number | string;
   price?: number | string;
   status?: string;
@@ -92,6 +93,7 @@ interface AircraftDoc {
 
 interface FormValues {
   title: string;
+  slug: string;
   year: string;
   price: string;
   status: string;
@@ -136,6 +138,7 @@ const safeSecHtml = (doc: AircraftDoc | undefined, key: SectionKey): string => {
 
 const docToFormDefaults = (doc: AircraftDoc = {}): FormValues => ({
   title: doc.title ?? '',
+  slug: doc.slug ?? '',
   year: String(doc.year ?? ''),
   price: String(doc.price ?? ''),
   status: doc.status ?? 'for-sale',
@@ -453,6 +456,7 @@ export default function EditJet({ id }: EditJetProps) {
 
       const payload: any = {
         title: values.title,
+        slug: values.slug || '',
         year: values.year || '',
         price: values.price || '',
         status: values.status,
@@ -579,8 +583,35 @@ export default function EditJet({ id }: EditJetProps) {
                   error={!!errors.title}
                   helperText={errors.title ? 'Required' : ''}
                 />
-                {/* Row 2: Year, Price, Make */}
+                {/* Row 2: Slug, Year, Price, Make */}
                 <FieldRow>
+                  <TextField
+                    label="Slug"
+                    id="slug"
+                    fullWidth
+                    {...tf}
+                    {...register('slug')}
+                    InputProps={{
+                      endAdornment: (
+                        <Box
+                          component="button"
+                          type="button"
+                          onClick={() => {
+                            const title = (document.getElementById('title') as HTMLInputElement)?.value || '';
+                            const firstWord = title.trim().split(/\s+/)[0] || '';
+                            setValue('slug', firstWord.toLowerCase());
+                          }}
+                          sx={{
+                            border: 'none', background: 'none', cursor: 'pointer',
+                            fontSize: 11, color: 'primary.main', whiteSpace: 'nowrap',
+                            '&:hover': { textDecoration: 'underline' },
+                          }}
+                        >
+                          Auto
+                        </Box>
+                      ),
+                    }}
+                  />
                   <TextField label="Year" id="year" type="number" fullWidth {...tf} {...register('year')} />
                   <TextField label="Price" id="price" type="number" fullWidth required {...tf} {...register('price', { required: true })} />
                   <Controller

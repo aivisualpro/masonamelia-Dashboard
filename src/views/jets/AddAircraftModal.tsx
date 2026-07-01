@@ -160,7 +160,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
 
   const { control, register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
     defaultValues: {
-      title: '', year: '', price: '', status: 'for-sale', category: '',
+      title: '', slug: '', year: '', price: '', status: 'for-sale', category: '',
       location: '', latitude: '', longitude: '',
       airframe: '', engine: '', engineTwo: '', propeller: '', propellerTwo: '',
       agentName: '', agentEmail: '', agentPhone: '',
@@ -248,6 +248,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
 
       const payload: any = {
         title: values.title,
+        slug: values.slug || '',
         year: values.year || '',
         price: values.price || '',
         status: values.status,
@@ -313,6 +314,32 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
               </MenuItem>
             ))}
           </TextField>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FieldLabel>Slug</FieldLabel>
+          <TextField fullWidth size="small" placeholder="e.g. n363db"
+            {...register('slug')}
+            InputProps={{
+              endAdornment: (
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => {
+                    const title = (document.querySelector('input[name="title"]') as HTMLInputElement)?.value || '';
+                    const firstWord = title.trim().split(/\s+/)[0] || '';
+                    setValue('slug', firstWord.toLowerCase());
+                  }}
+                  sx={{
+                    border: 'none', background: 'none', cursor: 'pointer',
+                    fontSize: 11, color: 'primary.main', whiteSpace: 'nowrap',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Auto
+                </Box>
+              ),
+            }}
+          />
         </Grid>
         <Grid item xs={12} sm={4}>
           <FieldLabel>Year</FieldLabel>

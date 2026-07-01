@@ -23,7 +23,7 @@ export async function PUT(
       const body = await request.json();
 
       const textFields = [
-        'title', 'status', 'category', 'location',
+        'title', 'slug', 'status', 'category', 'location',
         'latitude', 'longitude', 'overview', 'videoUrl'
       ];
       textFields.forEach(field => {
@@ -56,7 +56,7 @@ export async function PUT(
       const formData = await request.formData();
 
       const textFields = [
-        'title', 'status', 'category', 'location',
+        'title', 'slug', 'status', 'category', 'location',
         'latitude', 'longitude', 'overview', 'videoUrl'
       ];
       textFields.forEach(field => {

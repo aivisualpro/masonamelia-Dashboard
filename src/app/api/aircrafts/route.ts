@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       // ── FormData path (from AddJet / AddAircraftModal) ──
       const formData = await request.formData();
 
-      const textFields = ['title', 'status', 'location', 'overview', 'videoUrl'];
+      const textFields = ['title', 'slug', 'status', 'location', 'overview', 'videoUrl'];
       textFields.forEach(f => { if (formData.has(f)) body[f] = formData.get(f); });
 
       // category is an ObjectId reference — only set it when a real value is provided
