@@ -329,6 +329,7 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
   const [filterOpen, setFilterOpen] = React.useState(false);
   const [filterStatus, setFilterStatus] = React.useState<string[]>([]);
   const [filterMake, setFilterMake] = React.useState<string[]>([]);
+  const [filterModel, setFilterModel] = React.useState<string[]>([]);
   const [filterYear, setFilterYear] = React.useState<string[]>([]);
 
   // ── Drag & drop state ──
@@ -505,42 +506,48 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
   }, []);
 
 
-  const filteredRows = React.useMemo(() => {
-    let result = sortedRows;
-    // Apply search
+  // ── Cascading filter helpers ──
+  // For each dropdown, compute options from rows filtered by ALL OTHER active filters.
+  // This ensures you can never pick an impossible combination.
+  const applySearch = React.useCallback((list: AircraftRow[]) => {
     const q = searchTerm.trim().toLowerCase();
-    if (q) {
-      result = result.filter((r) =>
-        [r.title, r.model, r.status, r.category, r.location]
-          .some((v) => String(v || '').toLowerCase().includes(q))
-      );
-    }
-    // Apply filters
-    if (filterStatus.length) {
-      result = result.filter((r) => filterStatus.includes(r.status));
-    }
-    if (filterMake.length) {
-      result = result.filter((r) => filterMake.includes(r.category || ''));
-    }
-    if (filterYear.length) {
-      result = result.filter((r) => filterYear.includes(String(r.year || '')));
-    }
+    if (!q) return list;
+    return list.filter((r) =>
+      [r.title, r.model, r.status, r.category, r.location]
+        .some((v) => String(v || '').toLowerCase().includes(q))
+    );
+  }, [searchTerm]);
+
+  const applyFilter = React.useCallback((list: AircraftRow[], exclude?: 'status' | 'make' | 'model' | 'year') => {
+    let result = list;
+    if (exclude !== 'status' && filterStatus.length) result = result.filter((r) => filterStatus.includes(r.status));
+    if (exclude !== 'make' && filterMake.length) result = result.filter((r) => filterMake.includes(r.category || ''));
+    if (exclude !== 'model' && filterModel.length) result = result.filter((r) => filterModel.includes(r.model || ''));
+    if (exclude !== 'year' && filterYear.length) result = result.filter((r) => filterYear.includes(String(r.year || '')));
     return result;
-  }, [sortedRows, searchTerm, filterStatus, filterMake, filterYear]);
+  }, [filterStatus, filterMake, filterModel, filterYear]);
 
-  // Computed unique options for filter dropdowns
+  const filteredRows = React.useMemo(() => {
+    return applyFilter(applySearch(sortedRows));
+  }, [sortedRows, applySearch, applyFilter]);
+
+  // Cascading options: each dropdown shows only values possible given the OTHER filters
+  const searchedRows = React.useMemo(() => applySearch(sortedRows), [applySearch, sortedRows]);
   const uniqueStatuses = React.useMemo(() =>
-    [...new Set(rows.map((r) => r.status).filter(Boolean))].sort(),
-  [rows]);
+    [...new Set(applyFilter(searchedRows, 'status').map((r) => r.status).filter(Boolean))].sort(),
+  [searchedRows, applyFilter]);
   const uniqueMakes = React.useMemo(() =>
-    [...new Set(rows.map((r) => r.category).filter(Boolean) as string[])].sort(),
-  [rows]);
+    [...new Set(applyFilter(searchedRows, 'make').map((r) => r.category).filter(Boolean) as string[])].sort(),
+  [searchedRows, applyFilter]);
+  const uniqueModels = React.useMemo(() =>
+    [...new Set(applyFilter(searchedRows, 'model').map((r) => r.model).filter(Boolean))].sort(),
+  [searchedRows, applyFilter]);
   const uniqueYears = React.useMemo(() =>
-    [...new Set(rows.map((r) => String(r.year || '')).filter((y) => y && y !== ''))].sort((a, b) => Number(b) - Number(a)),
-  [rows]);
+    [...new Set(applyFilter(searchedRows, 'year').map((r) => String(r.year || '')).filter((y) => y && y !== ''))].sort((a, b) => Number(b) - Number(a)),
+  [searchedRows, applyFilter]);
 
-  const activeFilterCount = (filterStatus.length > 0 ? 1 : 0) + (filterMake.length > 0 ? 1 : 0) + (filterYear.length > 0 ? 1 : 0);
-  const clearAllFilters = () => { setFilterStatus([]); setFilterMake([]); setFilterYear([]); };
+  const activeFilterCount = (filterStatus.length > 0 ? 1 : 0) + (filterMake.length > 0 ? 1 : 0) + (filterModel.length > 0 ? 1 : 0) + (filterYear.length > 0 ? 1 : 0);
+  const clearAllFilters = () => { setFilterStatus([]); setFilterMake([]); setFilterModel([]); setFilterYear([]); };
 
   const visibleRows = React.useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount]);
   const hasMore = visibleCount < filteredRows.length;
@@ -801,6 +808,27 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
                 {uniqueMakes.map((m) => (
                   <MenuItem key={m} value={m} dense>
                     <Checkbox size="small" checked={filterMake.includes(m)} />
+                    <ListItemText primary={m} primaryTypographyProps={{ fontSize: 13 }} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Model filter */}
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <InputLabel sx={{ fontSize: 13 }}>Model</InputLabel>
+              <Select
+                multiple
+                value={filterModel}
+                onChange={(e) => setFilterModel(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                input={<OutlinedInput label="Model" />}
+                renderValue={(sel) => `${sel.length} selected`}
+                sx={{ fontSize: 13, height: 36 }}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 300 } } }}
+              >
+                {uniqueModels.map((m) => (
+                  <MenuItem key={m} value={m} dense>
+                    <Checkbox size="small" checked={filterModel.includes(m)} />
                     <ListItemText primary={m} primaryTypographyProps={{ fontSize: 13 }} />
                   </MenuItem>
                 ))}
