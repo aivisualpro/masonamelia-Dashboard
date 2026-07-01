@@ -16,13 +16,21 @@ import {
   Chip,
   Menu,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  Select,
+  Checkbox,
+  ListItemText,
+  OutlinedInput,
+  Badge,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import CloseIcon from '@mui/icons-material/Close';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -317,6 +325,12 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
   const [addOpen, setAddOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
 
+  // ── Filter state ──
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  const [filterStatus, setFilterStatus] = React.useState<string[]>([]);
+  const [filterMake, setFilterMake] = React.useState<string[]>([]);
+  const [filterYear, setFilterYear] = React.useState<string[]>([]);
+
   // ── Drag & drop state ──
   const dragRowId = React.useRef<string | null>(null);
   const dragOverRowId = React.useRef<string | null>(null);
@@ -492,13 +506,41 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
 
 
   const filteredRows = React.useMemo(() => {
+    let result = sortedRows;
+    // Apply search
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return sortedRows;
-    return sortedRows.filter((r) =>
-      [r.title, r.model, r.status, r.category, r.location]
-        .some((v) => String(v || '').toLowerCase().includes(q))
-    );
-  }, [sortedRows, searchTerm]);
+    if (q) {
+      result = result.filter((r) =>
+        [r.title, r.model, r.status, r.category, r.location]
+          .some((v) => String(v || '').toLowerCase().includes(q))
+      );
+    }
+    // Apply filters
+    if (filterStatus.length) {
+      result = result.filter((r) => filterStatus.includes(r.status));
+    }
+    if (filterMake.length) {
+      result = result.filter((r) => filterMake.includes(r.category || ''));
+    }
+    if (filterYear.length) {
+      result = result.filter((r) => filterYear.includes(String(r.year || '')));
+    }
+    return result;
+  }, [sortedRows, searchTerm, filterStatus, filterMake, filterYear]);
+
+  // Computed unique options for filter dropdowns
+  const uniqueStatuses = React.useMemo(() =>
+    [...new Set(rows.map((r) => r.status).filter(Boolean))].sort(),
+  [rows]);
+  const uniqueMakes = React.useMemo(() =>
+    [...new Set(rows.map((r) => r.category).filter(Boolean) as string[])].sort(),
+  [rows]);
+  const uniqueYears = React.useMemo(() =>
+    [...new Set(rows.map((r) => String(r.year || '')).filter((y) => y && y !== ''))].sort((a, b) => Number(b) - Number(a)),
+  [rows]);
+
+  const activeFilterCount = (filterStatus.length > 0 ? 1 : 0) + (filterMake.length > 0 ? 1 : 0) + (filterYear.length > 0 ? 1 : 0);
+  const clearAllFilters = () => { setFilterStatus([]); setFilterMake([]); setFilterYear([]); };
 
   const visibleRows = React.useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount]);
   const hasMore = visibleCount < filteredRows.length;
@@ -693,7 +735,117 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
               Saving order…
             </Box>
           )}
+          <Tooltip title="Filters">
+            <IconButton
+              size="small"
+              onClick={() => setFilterOpen((v) => !v)}
+              sx={{
+                ml: savingOrder ? 0 : 'auto',
+                color: filterOpen || activeFilterCount > 0 ? theme.palette.primary.main : theme.palette.text.secondary,
+                bgcolor: filterOpen ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+              }}
+            >
+              <Badge badgeContent={activeFilterCount} color="primary" overlap="circular">
+                <FilterListIcon fontSize="small" />
+              </Badge>
+            </IconButton>
+          </Tooltip>
         </Box>
+
+        {/* ── Filter bar ── */}
+        {filterOpen && (
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 2,
+            py: 1,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            backgroundColor: alpha(theme.palette.primary.main, 0.03),
+            flexShrink: 0,
+            flexWrap: 'wrap',
+          }}>
+            {/* Status filter */}
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel sx={{ fontSize: 13 }}>Status</InputLabel>
+              <Select
+                multiple
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                input={<OutlinedInput label="Status" />}
+                renderValue={(sel) => `${sel.length} selected`}
+                sx={{ fontSize: 13, height: 36 }}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 300 } } }}
+              >
+                {uniqueStatuses.map((s) => (
+                  <MenuItem key={s} value={s} dense>
+                    <Checkbox size="small" checked={filterStatus.includes(s)} />
+                    <ListItemText primary={<StatusPill value={s} />} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Make filter */}
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel sx={{ fontSize: 13 }}>Make</InputLabel>
+              <Select
+                multiple
+                value={filterMake}
+                onChange={(e) => setFilterMake(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                input={<OutlinedInput label="Make" />}
+                renderValue={(sel) => `${sel.length} selected`}
+                sx={{ fontSize: 13, height: 36 }}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 300 } } }}
+              >
+                {uniqueMakes.map((m) => (
+                  <MenuItem key={m} value={m} dense>
+                    <Checkbox size="small" checked={filterMake.includes(m)} />
+                    <ListItemText primary={m} primaryTypographyProps={{ fontSize: 13 }} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Year filter */}
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel sx={{ fontSize: 13 }}>Year</InputLabel>
+              <Select
+                multiple
+                value={filterYear}
+                onChange={(e) => setFilterYear(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                input={<OutlinedInput label="Year" />}
+                renderValue={(sel) => `${sel.length} selected`}
+                sx={{ fontSize: 13, height: 36 }}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 300 } } }}
+              >
+                {uniqueYears.map((y) => (
+                  <MenuItem key={y} value={y} dense>
+                    <Checkbox size="small" checked={filterYear.includes(y)} />
+                    <ListItemText primary={y} primaryTypographyProps={{ fontSize: 13 }} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {activeFilterCount > 0 && (
+              <Box
+                component="button"
+                onClick={clearAllFilters}
+                sx={{
+                  border: 'none', background: 'none', cursor: 'pointer',
+                  fontSize: 12, color: theme.palette.error.main, fontWeight: 600,
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                Clear all
+              </Box>
+            )}
+            <Box sx={{ fontSize: 12, color: theme.palette.text.disabled, ml: 'auto' }}>
+              {filteredRows.length} of {rows.length} aircraft
+            </Box>
+          </Box>
+        )}
 
         {/* Table scroll area */}
         <Box ref={scrollContainerRef} sx={{ flex: 1, overflow: 'auto' }}>
