@@ -9,107 +9,110 @@ export async function PUT(
 ) {
   await dbConnect();
   try {
-    const formData = await request.formData();
     const id = params.id;
-
     const existingAircraft = await Aircraft.findById(id);
     if (!existingAircraft) {
       return NextResponse.json({ success: false, message: 'Aircraft not found' }, { status: 404 });
     }
 
-    const updates: any = {};
-    
-    // Text fields
-    const textFields = [
-      'title', 'status', 'category', 'location', 
-      'latitude', 'longitude', 'overview', 'videoUrl'
-    ];
-    
-    textFields.forEach(field => {
-      if (formData.has(field)) {
-        updates[field] = formData.get(field);
-      }
-    });
+    const contentType = request.headers.get('content-type') || '';
+    let updates: any = {};
 
-    // Numeric fields - handle empty strings safely
-    const numericFields = [
-        'year', 'price', 'airframe', 'engine', 'engineTwo', 
+    if (contentType.includes('application/json')) {
+      // ── JSON path (images already uploaded via /api/upload-image) ──
+      const body = await request.json();
+
+      const textFields = [
+        'title', 'status', 'category', 'location',
+        'latitude', 'longitude', 'overview', 'videoUrl'
+      ];
+      textFields.forEach(field => {
+        if (body[field] !== undefined) updates[field] = body[field];
+      });
+
+      const numericFields = [
+        'year', 'price', 'airframe', 'engine', 'engineTwo',
         'propeller', 'propellerTwo', 'index'
-    ];
-    
-    numericFields.forEach(field => {
+      ];
+      numericFields.forEach(field => {
+        if (body[field] !== undefined && body[field] !== '' && body[field] !== null) {
+          updates[field] = Number(body[field]);
+        }
+      });
+
+      if (body.description) updates.description = body.description;
+      if (body.contactAgent) updates.contactAgent = body.contactAgent;
+
+      // Images are already URLs — no upload needed
+      if (Array.isArray(body.images)) {
+        updates.images = body.images;
+      }
+      if (body.featuredImage) {
+        updates.featuredImage = body.featuredImage;
+      }
+
+    } else {
+      // ── Legacy FormData path (files uploaded inline) ──
+      const formData = await request.formData();
+
+      const textFields = [
+        'title', 'status', 'category', 'location',
+        'latitude', 'longitude', 'overview', 'videoUrl'
+      ];
+      textFields.forEach(field => {
+        if (formData.has(field)) updates[field] = formData.get(field);
+      });
+
+      const numericFields = [
+        'year', 'price', 'airframe', 'engine', 'engineTwo',
+        'propeller', 'propellerTwo', 'index'
+      ];
+      numericFields.forEach(field => {
         if (formData.has(field)) {
-            const val = formData.get(field);
-            if (val && val !== 'undefined' && val !== 'null') {
-                updates[field] = val;
-            }
+          const val = formData.get(field);
+          if (val && val !== 'undefined' && val !== 'null') updates[field] = val;
         }
-    });
+      });
 
-    // JSON fields
-    if (formData.has('description')) {
-        try {
-            const descStr = formData.get('description') as string;
-            updates.description = JSON.parse(descStr);
-        } catch (e) {
-            console.error('Json parse error description', e);
-        }
-    }
-    if (formData.has('contactAgent')) {
-        try {
-            const agentStr = formData.get('contactAgent') as string;
-            updates.contactAgent = JSON.parse(agentStr);
-        } catch (e) {
-             console.error('Json parse error contactAgent', e);
-        }
-    }
+      if (formData.has('description')) {
+        try { updates.description = JSON.parse(formData.get('description') as string); } catch (e) { console.error('Json parse error description', e); }
+      }
+      if (formData.has('contactAgent')) {
+        try { updates.contactAgent = JSON.parse(formData.get('contactAgent') as string); } catch (e) { console.error('Json parse error contactAgent', e); }
+      }
 
-    // Images logic
-    let finalImages: string[] = [];
-    if (formData.has('keepImages')) {
+      // Images logic
+      let finalImages: string[] = [];
+      if (formData.has('keepImages')) {
         try {
-            const keepStr = formData.get('keepImages') as string;
-            const parsed = JSON.parse(keepStr);
-             if (Array.isArray(parsed)) {
-                finalImages = parsed;
-             }
-        } catch (e) {
-            console.error('Json parse error keepImages', e);
-            // fallback to existing if parse fails? Or empty?
-            // If parse fails, assume empty or previous state. 
-            // Better to respect what user sent as partial list. 
-            // If error, maybe don't change images? 
-            // Let's rely on empty array if failed.
-        }
-    }
+          const parsed = JSON.parse(formData.get('keepImages') as string);
+          if (Array.isArray(parsed)) finalImages = parsed;
+        } catch (e) { console.error('Json parse error keepImages', e); }
+      }
 
-    // Upload new images
-    const newFiles = formData.getAll('images');
-    for (const file of newFiles) {
-        if (file instanceof File) {
-             // Basic validation
-             if (file.size > 0) {
-                const url = await uploadToCloudinary(file, 'aircrafts');
-                finalImages.push(url);
-             }
+      // Upload new images
+      const newFiles = formData.getAll('images');
+      for (const file of newFiles) {
+        if (file instanceof File && file.size > 0) {
+          const url = await uploadToCloudinary(file, 'aircrafts');
+          finalImages.push(url);
         }
-    }
-    // Only update images if we processed `keepImages` or received new images
-    if (formData.has('keepImages') || newFiles.length > 0) {
+      }
+      if (formData.has('keepImages') || newFiles.length > 0) {
         updates.images = finalImages;
-    }
+      }
 
-    // Featured Image
-    if (formData.has('featuredImage')) {
+      // Featured Image
+      if (formData.has('featuredImage')) {
         const file = formData.get('featuredImage');
         if (file instanceof File && file.size > 0) {
-             const url = await uploadToCloudinary(file, 'aircrafts');
-             updates.featuredImage = url;
+          const url = await uploadToCloudinary(file, 'aircrafts');
+          updates.featuredImage = url;
         }
+      }
     }
 
     const updatedAircraft = await Aircraft.findByIdAndUpdate(id, updates, { new: true });
-    
     return NextResponse.json({ success: true, message: 'Aircraft updated', data: updatedAircraft });
 
   } catch (error: any) {

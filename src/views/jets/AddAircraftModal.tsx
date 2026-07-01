@@ -72,6 +72,11 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
   );
 }
 
+// ── HEIC helpers ──────────────────────────────────────────────────
+const ACCEPTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|bmp|svg|tiff?|heic|heif|avif)$/i;
+const isImageFile = (f: File) => f.type.startsWith('image/') || ACCEPTED_IMAGE_EXTENSIONS.test(f.name);
+const canPreview = (f: File) => !(/\.(heic|heif|tiff?)$/i.test(f.name));
+
 // ── Dropzone ──────────────────────────────────────────────────────
 function DropZone({ label, multiple, onFiles, files, onRemove }: {
   label: string; multiple?: boolean;
@@ -85,7 +90,7 @@ function DropZone({ label, multiple, onFiles, files, onRemove }: {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDrag(false);
-    const dropped = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    const dropped = Array.from(e.dataTransfer.files).filter(isImageFile);
     if (dropped.length) onFiles(dropped);
   };
 
@@ -109,7 +114,7 @@ function DropZone({ label, multiple, onFiles, files, onRemove }: {
           Drag & drop or <span style={{ color: theme.palette.primary.main, fontWeight: 600 }}>click to browse</span>
         </Typography>
         <Typography sx={{ fontSize: 11, color: theme.palette.text.disabled, mt: 0.5 }}>{label}</Typography>
-        <input ref={inputRef} hidden type="file" accept="image/*" multiple={multiple}
+        <input ref={inputRef} hidden type="file" accept="image/*,.heic,.heif" multiple={multiple}
           onChange={e => { if (e.target.files?.length) onFiles(Array.from(e.target.files)); }} />
       </Box>
 
@@ -117,7 +122,16 @@ function DropZone({ label, multiple, onFiles, files, onRemove }: {
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2 }}>
           {files.map((f, i) => (
             <Box key={i} sx={{ position: 'relative', width: 80, height: 80, borderRadius: 1.5, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
-              <img src={URL.createObjectURL(f)} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {canPreview(f) ? (
+                <img src={URL.createObjectURL(f)} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
+                  <GalleryIcon sx={{ fontSize: 24, color: theme.palette.primary.main, mb: 0.5 }} />
+                  <Typography sx={{ fontSize: 9, color: theme.palette.text.secondary, px: 0.5, textAlign: 'center', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                    {f.name.split('.').pop()?.toUpperCase()}
+                  </Typography>
+                </Box>
+              )}
               <IconButton size="small" onClick={e => { e.stopPropagation(); onRemove(i); }}
                 sx={{ position: 'absolute', top: 2, right: 2, bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', p: '2px', '&:hover': { bgcolor: '#ef4444' } }}>
                 <CloseIcon sx={{ fontSize: 12 }} />
@@ -140,6 +154,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
   const [images, setImages] = React.useState<File[]>([]);
   const [featuredImage, setFeaturedImage] = React.useState<File[]>([]);
   const [uploading, setUploading] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState({ current: 0, total: 0, label: '' });
   const [snack, setSnack] = React.useState({ open: false, msg: '', severity: 'success' as 'success' | 'error' });
   const [categories, setCategories] = React.useState<Category[]>([]);
 
@@ -169,12 +184,24 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
     setFeaturedImage([]);
     setStep(0);
     setActiveTab('general');
+    setUploadProgress({ current: 0, total: 0, label: '' });
     SECTION_KEYS.forEach(k => setValue(`sections.${k}` as any, ''));
   }, [reset, setValue]);
 
   const handleClose = () => {
     handleReset();
     onClose();
+  };
+
+  /** Upload a single image file to /api/upload-image and return the URL */
+  const uploadSingleImage = async (file: File, folder: string = 'aircrafts'): Promise<string> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('folder', folder);
+    const resp = await fetch('/api/upload-image', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) throw new Error(data?.message || 'Image upload failed');
+    return data.url;
   };
 
   const onSubmit = async (values: any) => {
@@ -187,37 +214,65 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
         return;
       }
 
+      const totalUploads = images.length + (featuredImage[0] ? 1 : 0);
+      let uploadedCount = 0;
+
+      // ── Upload featured image first (one-at-a-time) ──
+      let featuredUrl = '';
+      if (featuredImage[0]) {
+        setUploadProgress({ current: 1, total: totalUploads, label: 'Uploading featured image…' });
+        featuredUrl = await uploadSingleImage(featuredImage[0]);
+        uploadedCount++;
+      }
+
+      // ── Upload gallery images one-by-one ──
+      const imageUrls: string[] = [];
+      for (let i = 0; i < images.length; i++) {
+        setUploadProgress({
+          current: uploadedCount + 1,
+          total: totalUploads,
+          label: `Uploading image ${uploadedCount + 1} of ${totalUploads}…`
+        });
+        const url = await uploadSingleImage(images[i]);
+        imageUrls.push(url);
+        uploadedCount++;
+      }
+
+      setUploadProgress({ current: totalUploads, total: totalUploads, label: 'Saving aircraft…' });
+
+      // ── Build the final payload with URLs only (no files) ──
       const description = {
         version: 1,
         sections: Object.fromEntries(SECTION_KEYS.map(k => [k, { html: values.sections[k] || '' }]))
       };
 
-      const fd = new FormData();
-      fd.append('title', values.title);
-      fd.append('year', String(values.year || ''));
-      fd.append('price', String(values.price || ''));
-      fd.append('status', values.status);
-      if (values.category) fd.append('category', values.category);
-      fd.append('location', values.location);
-      fd.append('latitude', String(values.latitude || ''));
-      fd.append('longitude', String(values.longitude || ''));
-      if (values.airframe) fd.append('airframe', String(values.airframe));
-      if (values.engine) fd.append('engine', String(values.engine));
-      if (values.engineTwo) fd.append('engineTwo', String(values.engineTwo));
-      if (values.propeller) fd.append('propeller', String(values.propeller));
-      if (values.propellerTwo) fd.append('propellerTwo', String(values.propellerTwo));
-      if (values.videoUrl) fd.append('videoUrl', values.videoUrl);
-      fd.append('contactAgent', JSON.stringify({ name: values.agentName, email: values.agentEmail, phone: values.agentPhone }));
-      fd.append('description', JSON.stringify(description));
-      fd.append('overview', values.overview);
-      fd.append('index', String(values.index || ''));
-      images.forEach(f => fd.append('images', f));
-      if (featuredImage[0]) fd.append('featuredImage', featuredImage[0]);
+      const payload: any = {
+        title: values.title,
+        year: values.year || '',
+        price: values.price || '',
+        status: values.status,
+        location: values.location,
+        latitude: values.latitude || '',
+        longitude: values.longitude || '',
+        contactAgent: { name: values.agentName, email: values.agentEmail, phone: values.agentPhone },
+        description,
+        overview: values.overview,
+        index: values.index || '',
+      };
+      if (values.category) payload.category = values.category;
+      if (values.airframe) payload.airframe = Number(values.airframe);
+      if (values.engine) payload.engine = Number(values.engine);
+      if (values.engineTwo) payload.engineTwo = Number(values.engineTwo);
+      if (values.propeller) payload.propeller = Number(values.propeller);
+      if (values.propellerTwo) payload.propellerTwo = Number(values.propellerTwo);
+      if (values.videoUrl) payload.videoUrl = values.videoUrl;
+      if (imageUrls.length) payload.images = imageUrls;
+      if (featuredUrl) payload.featuredImage = featuredUrl;
 
       const resp = await fetch('/api/aircrafts', {
         method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: fd,
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       const data = await resp.json();
@@ -281,11 +336,11 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
         </Grid>
         <Grid item xs={12} sm={4}>
           <FieldLabel>Latitude</FieldLabel>
-          <TextField fullWidth size="small" type="number" {...register('latitude')} />
+          <TextField fullWidth size="small" placeholder="e.g. 33.4484" {...register('latitude')} />
         </Grid>
         <Grid item xs={12} sm={4}>
           <FieldLabel>Longitude</FieldLabel>
-          <TextField fullWidth size="small" type="number" {...register('longitude')} />
+          <TextField fullWidth size="small" placeholder="e.g. -112.0740" {...register('longitude')} />
         </Grid>
       </Grid>
 
@@ -420,6 +475,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
         onClose={uploading ? undefined : handleClose}
         fullWidth
         maxWidth="md"
+        disableEnforceFocus
         PaperProps={{
           sx: {
             borderRadius: 3,
@@ -476,7 +532,25 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
         </Box>
 
         {/* Upload progress */}
-        {uploading && <LinearProgress sx={{ flexShrink: 0 }} />}
+        {uploading && (
+          <Box sx={{ flexShrink: 0, px: 3, pt: 1.5, pb: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+              <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary }}>
+                {uploadProgress.label || 'Preparing…'}
+              </Typography>
+              {uploadProgress.total > 0 && (
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: theme.palette.primary.main }}>
+                  {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
+                </Typography>
+              )}
+            </Box>
+            <LinearProgress
+              variant={uploadProgress.total > 0 ? 'determinate' : 'indeterminate'}
+              value={uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : undefined}
+              sx={{ borderRadius: 1 }}
+            />
+          </Box>
+        )}
 
         {/* Content */}
         <DialogContent sx={{ flex: 1, overflow: 'auto', px: 3, py: 3 }}>

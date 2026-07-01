@@ -34,6 +34,10 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
+// ── HEIC helpers ──────────────────────────────────────────────────
+const ACCEPTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|bmp|svg|tiff?|heic|heif|avif)$/i;
+const canPreviewFile = (f: File) => !(/\.(heic|heif|tiff?)$/i.test(f.name));
+
 const STATUS = ['for-sale', 'sold', 'wanted', 'coming-soon', 'sale-pending', 'off-market', 'acquired'];
 const SECTION_KEYS = ['general', 'airframe', 'engine', 'propeller', 'avionics', 'equipment', 'interior', 'exterior', 'inspection'] as const;
 type SectionKey = typeof SECTION_KEYS[number];
@@ -115,9 +119,20 @@ interface SnackState {
   severity: AlertColor;
 }
 
-// helpers
-const safeSecHtml = (doc: AircraftDoc | undefined, key: SectionKey): string =>
-  String(doc?.description?.sections?.[key]?.html ?? '');
+// helpers – pull HTML from any supported storage format
+const safeSecHtml = (doc: AircraftDoc | undefined, key: SectionKey): string => {
+  const sec = doc?.description?.sections?.[key] as any;
+  if (!sec) return '';
+  // Prefer html (Quill output)
+  if (sec.html) return String(sec.html);
+  // Legacy: bullet-point items stored as string[]
+  if (Array.isArray(sec.items) && sec.items.length) {
+    return '<ul>' + sec.items.map((item: string) => `<li>${item}</li>`).join('') + '</ul>';
+  }
+  // Legacy: plain text
+  if (sec.text) return `<p>${String(sec.text)}</p>`;
+  return '';
+};
 
 const docToFormDefaults = (doc: AircraftDoc = {}): FormValues => ({
   title: doc.title ?? '',
@@ -129,8 +144,8 @@ const docToFormDefaults = (doc: AircraftDoc = {}): FormValues => ({
     return c ? String(c) : '';
   })(),
   location: doc.location ?? '',
-  latitude: doc.latitude ?? '',
-  longitude: doc.longitude ?? '',
+  latitude: String(doc.latitude ?? '').trim(),
+  longitude: String(doc.longitude ?? '').trim(),
   airframe: doc.airframe ?? '',
   engine: doc.engine ?? '',
   engineTwo: doc.engineTwo ?? '',
@@ -227,6 +242,7 @@ export default function EditJet({ id }: EditJetProps) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, label: '' });
   const [snack, setSnack] = useState<SnackState>({ open: false, msg: '', severity: 'success' });
   const [categories, setCategories] = useState<Category[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -379,11 +395,49 @@ export default function EditJet({ id }: EditJetProps) {
     }
   };
 
+  /** Upload a single image file to /api/upload-image and return the URL */
+  const uploadSingleImage = async (file: File, folder: string = 'aircrafts'): Promise<string> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('folder', folder);
+    const resp = await fetch('/api/upload-image', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) throw new Error(data?.message || 'Image upload failed');
+    return data.url;
+  };
+
   // Submit → UPDATE
   const onSubmit = async (values: FormValues) => {
     try {
       setUploading(true);
 
+      const totalUploads = imagesLocal.length + (featuredLocal ? 1 : 0);
+      let uploadedCount = 0;
+
+      // ── Upload featured image first (one-at-a-time) ──
+      let featuredUrl = '';
+      if (featuredLocal) {
+        setUploadProgress({ current: 1, total: totalUploads, label: 'Uploading featured image…' });
+        featuredUrl = await uploadSingleImage(featuredLocal);
+        uploadedCount++;
+      }
+
+      // ── Upload new gallery images one-by-one ──
+      const newImageUrls: string[] = [];
+      for (let i = 0; i < imagesLocal.length; i++) {
+        setUploadProgress({
+          current: uploadedCount + 1,
+          total: totalUploads,
+          label: `Uploading image ${uploadedCount + 1} of ${totalUploads}…`
+        });
+        const url = await uploadSingleImage(imagesLocal[i]);
+        newImageUrls.push(url);
+        uploadedCount++;
+      }
+
+      setUploadProgress({ current: totalUploads, total: totalUploads, label: 'Saving aircraft…' });
+
+      // ── Build the final payload with URLs only (no files) ──
       const description = {
         version: 1,
         sections: Object.fromEntries(SECTION_KEYS.map((k) => [k, { html: values.sections[k] || '' }]))
@@ -394,39 +448,36 @@ export default function EditJet({ id }: EditJetProps) {
         phone: values.agentPhone || ''
       };
 
-      const fd = new FormData();
-      fd.append('title', values.title);
-      fd.append('year', String(values.year || ''));
-      fd.append('price', String(values.price || ''));
-      fd.append('status', values.status);
-      fd.append('category', values.category);
-      fd.append('location', values.location);
-      fd.append('latitude', String(values.latitude || ''));
-      fd.append('longitude', String(values.longitude || ''));
-      fd.append('overview', values.overview);
-      fd.append('videoUrl', values.videoUrl);
-      if (values.airframe) fd.append('airframe', String(values.airframe));
-      if (values.engine) fd.append('engine', String(values.engine));
-      if (values.engineTwo) fd.append('engineTwo', String(values.engineTwo));
-      if (values.propeller) fd.append('propeller', String(values.propeller));
-      if (values.propellerTwo) fd.append('propellerTwo', String(values.propellerTwo));
-      fd.append('contactAgent', JSON.stringify(contactAgent));
-      fd.append('description', JSON.stringify(description));
-      fd.append('index', String(values.index));
+      // Combine existing kept images with newly uploaded URLs
+      const allImages = [...imagesExisting, ...newImageUrls];
 
-      // gallery images
-      fd.append('keepImages', JSON.stringify(imagesExisting));
-      imagesLocal.forEach((f) => fd.append('images', f));
-
-      // featured image (replace only if a new one is chosen)
-      if (featuredLocal) {
-        fd.append('featuredImage', featuredLocal);
-      }
+      const payload: any = {
+        title: values.title,
+        year: values.year || '',
+        price: values.price || '',
+        status: values.status,
+        category: values.category,
+        location: values.location,
+        latitude: values.latitude || '',
+        longitude: values.longitude || '',
+        overview: values.overview,
+        videoUrl: values.videoUrl,
+        contactAgent,
+        description,
+        index: values.index,
+        images: allImages,
+      };
+      if (values.airframe) payload.airframe = Number(values.airframe);
+      if (values.engine) payload.engine = Number(values.engine);
+      if (values.engineTwo) payload.engineTwo = Number(values.engineTwo);
+      if (values.propeller) payload.propeller = Number(values.propeller);
+      if (values.propellerTwo) payload.propellerTwo = Number(values.propellerTwo);
+      if (featuredUrl) payload.featuredImage = featuredUrl;
 
       const resp = await fetch(`${API_BASE}/api/aircrafts/update/${id}`, {
         method: 'PUT',
-        headers: { Accept: 'application/json' },
-        body: fd
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload)
       });
 
       const body = await parseBody(resp);
@@ -445,6 +496,7 @@ export default function EditJet({ id }: EditJetProps) {
       }
       setImagesLocal([]);
       clearFeaturedLocal();
+      setUploadProgress({ current: 0, total: 0, label: '' });
     } catch (e) {
       setSnack({ open: true, severity: 'error', msg: (e as Error).message });
     } finally {
@@ -469,7 +521,25 @@ export default function EditJet({ id }: EditJetProps) {
 
   return (
     <Box sx={{ flex: 1, overflow: 'auto' }}>
-      {uploading && <LinearProgress sx={{ mb: 2, borderRadius: 1 }} />}
+      {uploading && (
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+            <Typography sx={{ fontSize: 12, color: theme.palette.text.secondary }}>
+              {uploadProgress.label || 'Preparing…'}
+            </Typography>
+            {uploadProgress.total > 0 && (
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: theme.palette.primary.main }}>
+                {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
+              </Typography>
+            )}
+          </Box>
+          <LinearProgress
+            variant={uploadProgress.total > 0 ? 'determinate' : 'indeterminate'}
+            value={uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : undefined}
+            sx={{ borderRadius: 1 }}
+          />
+        </Box>
+      )}
 
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -621,7 +691,7 @@ export default function EditJet({ id }: EditJetProps) {
             {/* Featured Image */}
             <SectionCard title="Featured Image">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <input id="featured-image-upload" ref={featuredInputRef} accept="image/*" type="file" onChange={onFeaturedChange} style={{ display: 'none' }} />
+                <input id="featured-image-upload" ref={featuredInputRef} accept="image/*,.heic,.heif" type="file" onChange={onFeaturedChange} style={{ display: 'none' }} />
                 <Button variant="contained" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }} onClick={() => featuredInputRef.current?.click()}>
                   {featuredLocal ? 'Change' : 'Upload'}
                 </Button>
@@ -631,11 +701,19 @@ export default function EditJet({ id }: EditJetProps) {
               </Box>
               {(featuredLocal || featuredExisting) && (
                 <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
-                  <img
-                    src={featuredLocal ? URL.createObjectURL(featuredLocal) : (featuredExisting || '')}
-                    alt="Featured"
-                    style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }}
-                  />
+                  {featuredLocal && !canPreviewFile(featuredLocal) ? (
+                    <Box sx={{ width: '100%', height: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover' }}>
+                      <UploadIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                      <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>{featuredLocal.name}</Typography>
+                      <Typography sx={{ fontSize: 11, color: 'text.disabled' }}>Preview not available — will convert on upload</Typography>
+                    </Box>
+                  ) : (
+                    <img
+                      src={featuredLocal ? URL.createObjectURL(featuredLocal) : (featuredExisting || '')}
+                      alt="Featured"
+                      style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }}
+                    />
+                  )}
                   {/* Download button */}
                   {!featuredLocal && featuredExisting && (
                     <IconButton
@@ -658,7 +736,7 @@ export default function EditJet({ id }: EditJetProps) {
             {/* Gallery Images */}
             <SectionCard title="Gallery Images">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <input id="gallery-images-upload" accept="image/*" type="file" multiple onChange={onImagesChange} style={{ display: 'none' }} ref={galleryInputRef} />
+                <input id="gallery-images-upload" accept="image/*,.heic,.heif" type="file" multiple onChange={onImagesChange} style={{ display: 'none' }} ref={galleryInputRef} />
                 <Button variant="contained" size="small" startIcon={<UploadIcon />} sx={{ textTransform: 'none', fontSize: 13 }} onClick={() => galleryInputRef.current?.click()}>
                   Add Images
                 </Button>
@@ -745,7 +823,14 @@ export default function EditJet({ id }: EditJetProps) {
                   <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 1.5 }}>
                     {imagesLocal.map((f, idx) => (
                       <Box key={idx} sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
-                        <img src={URL.createObjectURL(f)} alt={f.name} style={imgThumbStyle} />
+                        {canPreviewFile(f) ? (
+                          <img src={URL.createObjectURL(f)} alt={f.name} style={imgThumbStyle} />
+                        ) : (
+                          <Box sx={{ ...imgThumbStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover', width: '100%' }}>
+                            <UploadIcon sx={{ fontSize: 28, color: 'text.secondary', mb: 0.5 }} />
+                            <Typography sx={{ fontSize: 10, color: 'text.disabled' }}>{f.name.split('.').pop()?.toUpperCase()}</Typography>
+                          </Box>
+                        )}
                         <IconButton
                           size="small"
                           onClick={() => removeLocalImage(idx)}
