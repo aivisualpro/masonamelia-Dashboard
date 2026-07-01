@@ -427,7 +427,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
       <SectionHeader icon={<DescIcon sx={{ fontSize: 18 }} />} title="Overview & Sections" />
 
       <Box>
-        <FieldLabel>Jet Overview</FieldLabel>
+        <FieldLabel>Description</FieldLabel>
         <TextField
           fullWidth
           multiline

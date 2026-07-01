@@ -646,7 +646,7 @@ export default function EditJet({ id }: EditJetProps) {
             </SectionCard>
 
             {/* Row 7: Overview */}
-            <SectionCard title="Jet Overview">
+            <SectionCard title="Description">
               <Controller
                 control={control}
                 name="overview"
@@ -656,8 +656,8 @@ export default function EditJet({ id }: EditJetProps) {
               />
             </SectionCard>
 
-            {/* Row 8: Description with tabs */}
-            <SectionCard title="Description">
+            {/* Row 8: Specifications with tabs */}
+            <SectionCard title="Specifications">
               <Tabs
                 value={activeTab}
                 onChange={(_, v) => setActiveTab(v)}
