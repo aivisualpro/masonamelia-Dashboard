@@ -173,7 +173,10 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
   React.useEffect(() => {
     if (!open) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/aircraftCategories`)
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then(d => setCategories(d.data || []))
       .catch(() => {});
   }, [open]);

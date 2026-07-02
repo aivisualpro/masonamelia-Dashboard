@@ -263,7 +263,10 @@ export default function DashboardDefault({ initialData }: { initialData?: any })
     // Skip fetch if server-side data was provided
     if (initialData) return;
     fetch('/api/analysis/lists')
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) throw new Error(`Server error ${r.status} — database may be unavailable`);
+        return r.json();
+      })
       .then(j => {
         if (j.success) setData(j.data);
         else setError(j.message || 'Failed to load');

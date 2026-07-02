@@ -55,16 +55,17 @@ const nextConfig = {
   },
 
   // ─── Optimized image pipeline ────────────────────────────────────────
+  // Using a custom Cloudinary loader so Next.js does NOT proxy images
+  // through /_next/image server-side. The browser fetches directly from
+  // Cloudinary's CDN, avoiding ConnectTimeoutError (IPv6 issues in dev).
   images: {
-    formats: ['image/avif', 'image/webp'],
+    loader: 'custom',
+    loaderFile: './src/utils/cloudinaryLoader.js',
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 64, 96, 128, 256],
     minimumCacheTTL: 60,
+    // remotePatterns not needed with a custom loader
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
       {
         protocol: 'https',
         hostname: 'placehold.co',
