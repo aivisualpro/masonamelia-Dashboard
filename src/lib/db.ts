@@ -20,6 +20,13 @@ if (!cached) {
 }
 
 async function  dbConnect() {
+  // If the cached connection has gone stale (Atlas idle-timeout, network blip, etc.)
+  // clear it so we re-establish a fresh one.
+  if (cached.conn && mongoose.connection.readyState !== 1) {
+    cached.conn = null;
+    cached.promise = null;
+  }
+
   if (cached.conn) {
     return cached.conn;
   }

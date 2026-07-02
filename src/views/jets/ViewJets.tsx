@@ -352,6 +352,11 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/lists/admin?page=1&pageSize=1000`);
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.error(`Aircraft list fetch failed (${res.status}):`, errText);
+        return;
+      }
       const json = await res.json();
       setAircrafts(json.data || []);
     } catch (e) {
