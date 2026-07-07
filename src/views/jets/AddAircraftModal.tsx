@@ -18,6 +18,7 @@ import {
   CheckCircle as CheckIcon
 } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
+import { compressImage, formatBytes } from '@/utils/compressImage';
 
 // ── Constants ────────────────────────────────────────────────────
 const STATUS = [
@@ -154,7 +155,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
   const [images, setImages] = React.useState<File[]>([]);
   const [featuredImage, setFeaturedImage] = React.useState<File[]>([]);
   const [uploading, setUploading] = React.useState(false);
-  const [uploadProgress, setUploadProgress] = React.useState({ current: 0, total: 0, label: '' });
+  const [uploadProgress, setUploadProgress] = React.useState({ current: 0, total: 0, label: '', compressionInfo: '' });
   const [snack, setSnack] = React.useState({ open: false, msg: '', severity: 'success' as 'success' | 'error' });
   const [categories, setCategories] = React.useState<Category[]>([]);
 
@@ -187,7 +188,7 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
     setFeaturedImage([]);
     setStep(0);
     setActiveTab('general');
-    setUploadProgress({ current: 0, total: 0, label: '' });
+    setUploadProgress({ current: 0, total: 0, label: '', compressionInfo: '' });
     SECTION_KEYS.forEach(k => setValue(`sections.${k}` as any, ''));
   }, [reset, setValue]);
 
@@ -196,10 +197,44 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
     onClose();
   };
 
-  /** Upload a single image file to /api/upload-image and return the URL */
-  const uploadSingleImage = async (file: File, folder: string = 'aircrafts'): Promise<string> => {
+  /** Compress + upload a single image file and return the URL */
+  const compressAndUpload = async (
+    file: File,
+    index: number,
+    total: number,
+    folder: string = 'aircrafts'
+  ): Promise<string> => {
+    // ── Phase 1: Compress ──
+    setUploadProgress({
+      current: index,
+      total,
+      label: `Compressing image ${index} of ${total}…`,
+      compressionInfo: `${file.name} — ${formatBytes(file.size)}`,
+    });
+
+    const result = await compressImage(file, {
+      targetSizeBytes: 900_000,  // 900 KB — safe for Cloudinary free tier
+      onProgress: (_pct, stage) => {
+        setUploadProgress(prev => ({
+          ...prev,
+          label: `Image ${index}/${total}: ${stage}`,
+        }));
+      },
+    });
+
+    // ── Phase 2: Upload ──
+    const ratio = result.compressionRatio > 1
+      ? `${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (${result.compressionRatio}x smaller)`
+      : 'Already optimized';
+
+    setUploadProgress(prev => ({
+      ...prev,
+      label: `Uploading image ${index} of ${total}…`,
+      compressionInfo: ratio,
+    }));
+
     const fd = new FormData();
-    fd.append('file', file);
+    fd.append('file', result.file);
     fd.append('folder', folder);
     const resp = await fetch('/api/upload-image', { method: 'POST', body: fd });
     const data = await resp.json();
@@ -220,28 +255,22 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
       const totalUploads = images.length + (featuredImage[0] ? 1 : 0);
       let uploadedCount = 0;
 
-      // ── Upload featured image first (one-at-a-time) ──
+      // ── Compress & Upload featured image first ──
       let featuredUrl = '';
       if (featuredImage[0]) {
-        setUploadProgress({ current: 1, total: totalUploads, label: 'Uploading featured image…' });
-        featuredUrl = await uploadSingleImage(featuredImage[0]);
+        featuredUrl = await compressAndUpload(featuredImage[0], 1, totalUploads);
         uploadedCount++;
       }
 
-      // ── Upload gallery images one-by-one ──
+      // ── Compress & Upload gallery images one-by-one ──
       const imageUrls: string[] = [];
       for (let i = 0; i < images.length; i++) {
-        setUploadProgress({
-          current: uploadedCount + 1,
-          total: totalUploads,
-          label: `Uploading image ${uploadedCount + 1} of ${totalUploads}…`
-        });
-        const url = await uploadSingleImage(images[i]);
+        const url = await compressAndUpload(images[i], uploadedCount + 1, totalUploads);
         imageUrls.push(url);
         uploadedCount++;
       }
 
-      setUploadProgress({ current: totalUploads, total: totalUploads, label: 'Saving aircraft…' });
+      setUploadProgress({ current: totalUploads, total: totalUploads, label: 'Saving aircraft…', compressionInfo: '' });
 
       // ── Build the final payload with URLs only (no files) ──
       const description = {
@@ -561,26 +590,67 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
           </Stepper>
         </Box>
 
-        {/* Upload progress */}
+        {/* Upload progress — Smart Compression Engine UI */}
         {uploading && (
-          <Box sx={{ flexShrink: 0, px: 3, pt: 1.5, pb: 1, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1, mx: 2, mt: 1 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CircularProgress size={16} thickness={5} sx={{ color: theme.palette.primary.main }} />
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
-                  {uploadProgress.label || 'Preparing…'}
-                </Typography>
+          <Box sx={{
+            flexShrink: 0, mx: 2, mt: 1, borderRadius: 2, overflow: 'hidden',
+            background: isDark
+              ? 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.10))'
+              : 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.06))',
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            backdropFilter: 'blur(8px)',
+          }}>
+            <Box sx={{ px: 2.5, pt: 1.5, pb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{
+                    width: 24, height: 24, borderRadius: '50%', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    bgcolor: alpha(theme.palette.primary.main, 0.15),
+                    animation: 'pulse 2s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+                      '50%': { transform: 'scale(1.1)', opacity: 0.8 },
+                    },
+                  }}>
+                    <CircularProgress size={14} thickness={5} sx={{ color: theme.palette.primary.main }} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: theme.palette.text.primary, lineHeight: 1.2 }}>
+                      {uploadProgress.label || 'Initializing compression engine…'}
+                    </Typography>
+                    {uploadProgress.compressionInfo && (
+                      <Typography sx={{
+                        fontSize: 10, color: theme.palette.success.main, fontWeight: 500,
+                        fontFamily: 'monospace', mt: 0.25,
+                      }}>
+                        ⚡ {uploadProgress.compressionInfo}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+                {uploadProgress.total > 0 && (
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 800, color: theme.palette.primary.main, lineHeight: 1 }}>
+                      {uploadProgress.current}/{uploadProgress.total}
+                    </Typography>
+                    <Typography sx={{ fontSize: 9, color: theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      images
+                    </Typography>
+                  </Box>
+                )}
               </Box>
-              {uploadProgress.total > 0 && (
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: theme.palette.primary.main }}>
-                  {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
-                </Typography>
-              )}
             </Box>
             <LinearProgress
               variant={uploadProgress.total > 0 ? 'determinate' : 'indeterminate'}
               value={uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : undefined}
-              sx={{ borderRadius: 1, height: 5 }}
+              sx={{
+                height: 4,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                '& .MuiLinearProgress-bar': {
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main || '#a855f7'})`,
+                },
+              }}
             />
           </Box>
         )}

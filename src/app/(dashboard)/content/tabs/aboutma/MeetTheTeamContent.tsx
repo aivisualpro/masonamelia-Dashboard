@@ -174,7 +174,7 @@ export default function MeetTheTeamContent() {
       if (addPicFile) {
         const compressed = await compressImage(addPicFile);
         const fd = new FormData();
-        fd.append('file', compressed);
+        fd.append('file', compressed.file);
         const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -184,7 +184,7 @@ export default function MeetTheTeamContent() {
       if (addDetailPicFile) {
         const compressed = await compressImage(addDetailPicFile);
         const fd = new FormData();
-        fd.append('file', compressed);
+        fd.append('file', compressed.file);
         const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -223,7 +223,7 @@ export default function MeetTheTeamContent() {
       if (editPicFile) {
         const compressed = await compressImage(editPicFile);
         const fd = new FormData();
-        fd.append('file', compressed);
+        fd.append('file', compressed.file);
         const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -233,7 +233,7 @@ export default function MeetTheTeamContent() {
       if (editDetailPicFile) {
         const compressed = await compressImage(editDetailPicFile);
         const fd = new FormData();
-        fd.append('file', compressed);
+        fd.append('file', compressed.file);
         const uploadRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -322,9 +322,9 @@ export default function MeetTheTeamContent() {
                   if (!file) return;
                   try {
                     // Compress before uploading — hero images can be larger
-                    const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1080 });
+                    const compressed = await compressImage(file, { maxDimension: 1920 });
                     const fd = new FormData();
-                    fd.append('file', compressed);
+                    fd.append('file', compressed.file);
                     const res = await axios.post('/api/upload', fd);
                     if (res.data?.url) {
                       setHeroBgImage(res.data.url);

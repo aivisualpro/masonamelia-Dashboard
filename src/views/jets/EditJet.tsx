@@ -28,6 +28,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import 'react-quill/dist/quill.snow.css';
 import { getAircraftCategories } from '@/api/aircraftCategory.api';
+import { compressImage, formatBytes } from '@/utils/compressImage';
 
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
@@ -245,7 +246,7 @@ export default function EditJet({ id }: EditJetProps) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, label: '' });
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, label: '', compressionInfo: '' });
   const [snack, setSnack] = useState<SnackState>({ open: false, msg: '', severity: 'success' });
   const [categories, setCategories] = useState<Category[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -398,10 +399,44 @@ export default function EditJet({ id }: EditJetProps) {
     }
   };
 
-  /** Upload a single image file to /api/upload-image and return the URL */
-  const uploadSingleImage = async (file: File, folder: string = 'aircrafts'): Promise<string> => {
+  /** Compress + upload a single image file and return the URL */
+  const compressAndUpload = async (
+    file: File,
+    index: number,
+    total: number,
+    folder: string = 'aircrafts'
+  ): Promise<string> => {
+    // ── Phase 1: Compress ──
+    setUploadProgress({
+      current: index,
+      total,
+      label: `Compressing image ${index} of ${total}…`,
+      compressionInfo: `${file.name} — ${formatBytes(file.size)}`,
+    });
+
+    const result = await compressImage(file, {
+      targetSizeBytes: 900_000,
+      onProgress: (_pct, stage) => {
+        setUploadProgress(prev => ({
+          ...prev,
+          label: `Image ${index}/${total}: ${stage}`,
+        }));
+      },
+    });
+
+    // ── Phase 2: Upload ──
+    const ratio = result.compressionRatio > 1
+      ? `${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (${result.compressionRatio}x smaller)`
+      : 'Already optimized';
+
+    setUploadProgress(prev => ({
+      ...prev,
+      label: `Uploading image ${index} of ${total}…`,
+      compressionInfo: ratio,
+    }));
+
     const fd = new FormData();
-    fd.append('file', file);
+    fd.append('file', result.file);
     fd.append('folder', folder);
     const resp = await fetch('/api/upload-image', { method: 'POST', body: fd });
     const data = await resp.json();
@@ -417,28 +452,22 @@ export default function EditJet({ id }: EditJetProps) {
       const totalUploads = imagesLocal.length + (featuredLocal ? 1 : 0);
       let uploadedCount = 0;
 
-      // ── Upload featured image first (one-at-a-time) ──
+      // ── Compress & Upload featured image first ──
       let featuredUrl = '';
       if (featuredLocal) {
-        setUploadProgress({ current: 1, total: totalUploads, label: 'Uploading featured image…' });
-        featuredUrl = await uploadSingleImage(featuredLocal);
+        featuredUrl = await compressAndUpload(featuredLocal, 1, totalUploads);
         uploadedCount++;
       }
 
-      // ── Upload new gallery images one-by-one ──
+      // ── Compress & Upload new gallery images one-by-one ──
       const newImageUrls: string[] = [];
       for (let i = 0; i < imagesLocal.length; i++) {
-        setUploadProgress({
-          current: uploadedCount + 1,
-          total: totalUploads,
-          label: `Uploading image ${uploadedCount + 1} of ${totalUploads}…`
-        });
-        const url = await uploadSingleImage(imagesLocal[i]);
+        const url = await compressAndUpload(imagesLocal[i], uploadedCount + 1, totalUploads);
         newImageUrls.push(url);
         uploadedCount++;
       }
 
-      setUploadProgress({ current: totalUploads, total: totalUploads, label: 'Saving aircraft…' });
+      setUploadProgress({ current: totalUploads, total: totalUploads, label: 'Saving aircraft…', compressionInfo: '' });
 
       // ── Build the final payload with URLs only (no files) ──
       const description = {
@@ -500,7 +529,7 @@ export default function EditJet({ id }: EditJetProps) {
       }
       setImagesLocal([]);
       clearFeaturedLocal();
-      setUploadProgress({ current: 0, total: 0, label: '' });
+      setUploadProgress({ current: 0, total: 0, label: '', compressionInfo: '' });
     } catch (e) {
       setSnack({ open: true, severity: 'error', msg: (e as Error).message });
     } finally {
@@ -533,32 +562,70 @@ export default function EditJet({ id }: EditJetProps) {
             left: 0,
             right: 0,
             zIndex: 1400,
-            bgcolor: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(12px)',
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,27,75,0.92))'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.97), rgba(241,245,249,0.95))',
+            borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.15)'}`,
             px: 3,
             py: 2,
             display: 'flex',
             flexDirection: 'column',
             gap: 1,
+            boxShadow: '0 4px 32px rgba(0,0,0,0.15)',
           }}
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <CircularProgress size={18} thickness={5} sx={{ color: theme.palette.primary.main }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>
-                {uploadProgress.label || 'Preparing…'}
-              </Typography>
+              <Box sx={{
+                width: 28, height: 28, borderRadius: '50%', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
+                animation: 'pulse 2s ease-in-out infinite',
+                '@keyframes pulse': {
+                  '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+                  '50%': { transform: 'scale(1.1)', opacity: 0.8 },
+                },
+              }}>
+                <CircularProgress size={16} thickness={5} sx={{ color: theme.palette.primary.main }} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 14, fontWeight: 600, color: theme.palette.text.primary }}>
+                  {uploadProgress.label || 'Initializing compression engine…'}
+                </Typography>
+                {uploadProgress.compressionInfo && (
+                  <Typography sx={{
+                    fontSize: 11, color: theme.palette.success.main, fontWeight: 500,
+                    fontFamily: 'monospace', mt: 0.25,
+                  }}>
+                    ⚡ {uploadProgress.compressionInfo}
+                  </Typography>
+                )}
+              </Box>
             </Box>
             {uploadProgress.total > 0 && (
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: theme.palette.primary.main }}>
-                {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
-              </Typography>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography sx={{ fontSize: 16, fontWeight: 800, color: theme.palette.primary.main, lineHeight: 1 }}>
+                  {uploadProgress.current}/{uploadProgress.total}
+                </Typography>
+                <Typography sx={{ fontSize: 9, color: theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  images
+                </Typography>
+              </Box>
             )}
           </Box>
           <LinearProgress
             variant={uploadProgress.total > 0 ? 'determinate' : 'indeterminate'}
             value={uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : undefined}
-            sx={{ borderRadius: 1, height: 6 }}
+            sx={{
+              borderRadius: 1,
+              height: 5,
+              bgcolor: theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)',
+              '& .MuiLinearProgress-bar': {
+                background: `linear-gradient(90deg, ${theme.palette.primary.main}, #a855f7)`,
+                borderRadius: 1,
+              },
+            }}
           />
         </Box>
       )}
