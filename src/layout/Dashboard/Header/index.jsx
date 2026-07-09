@@ -91,6 +91,7 @@ export default function Header() {
               width={120}
               height={36}
               priority
+              unoptimized
               style={{
                 height: 36,
                 width: 120,
@@ -109,6 +110,7 @@ export default function Header() {
               width={120}
               height={36}
               priority
+              unoptimized
               style={{
                 height: 36,
                 width: 120,
@@ -239,6 +241,7 @@ export default function Header() {
               width={100}
               height={30}
               priority
+              unoptimized
               style={{ height: 30, width: 100 }}
             />
           </Link>

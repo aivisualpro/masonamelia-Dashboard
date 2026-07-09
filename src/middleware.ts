@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token');
 
   // Verify if the path is an asset or public
-  if (isStaticAsset(pathname) || publicPaths.includes(pathname) || pathname.startsWith('/api/auth/')) {
+  if (isStaticAsset(pathname) || publicPaths.includes(pathname) || pathname.startsWith('/api/auth/') || pathname.startsWith('/api/')) {
     // If user is already logged in (has token) and tries to access login/register, redirect to dashboard
     if (token && (pathname === '/login' || pathname === '/register' || pathname === '/')) {
       return NextResponse.redirect(new URL('/dashboard', request.url));

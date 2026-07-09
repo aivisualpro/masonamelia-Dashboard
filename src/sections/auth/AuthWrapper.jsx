@@ -67,6 +67,7 @@ export default function AuthWrapper({ children }) {
             width={220}
             height={66}
             priority
+            unoptimized
             style={{
               maxWidth: 220,
               height: 'auto',

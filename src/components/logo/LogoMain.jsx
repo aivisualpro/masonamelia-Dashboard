@@ -8,7 +8,7 @@ export default function LogoMain() {
   const theme = useTheme();
   return (
     <>
-      <Image style={{ maxWidth: "200px", height: "auto", marginTop: 60 }} src={logoSrc} alt="Mason Amelia" width={200} height={60} priority />
+      <Image style={{ maxWidth: "200px", height: "auto", marginTop: 60 }} src={logoSrc} alt="Mason Amelia" width={200} height={60} priority unoptimized />
     </>
   );
 }
