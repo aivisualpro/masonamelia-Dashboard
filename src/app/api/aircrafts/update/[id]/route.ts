@@ -112,6 +112,10 @@ export async function PUT(
       }
     }
 
+    if (updates.category === '' || updates.category === 'null' || updates.category === 'undefined') {
+      updates.category = null;
+    }
+
     const updatedAircraft = await Aircraft.findByIdAndUpdate(id, updates, { new: true });
     return NextResponse.json({ success: true, message: 'Aircraft updated', data: updatedAircraft });
 

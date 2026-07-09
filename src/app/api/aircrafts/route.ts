@@ -65,6 +65,10 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     }
 
+    if (body.category === '' || body.category === 'null' || body.category === 'undefined' || body.category === null) {
+      delete body.category;
+    }
+
     const aircraft = await Aircraft.create(body);
     return NextResponse.json({ success: true, message: 'Aircraft created', data: aircraft }, { status: 201 });
   } catch (error: any) {

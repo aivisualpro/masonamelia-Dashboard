@@ -159,7 +159,8 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
   const [snack, setSnack] = React.useState({ open: false, msg: '', severity: 'success' as 'success' | 'error' });
   const [categories, setCategories] = React.useState<Category[]>([]);
 
-  const { control, register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+  const { control, register, handleSubmit, reset, setValue, formState: { errors, isValid } } = useForm({
+    mode: 'onChange',
     defaultValues: {
       title: '', slug: '', year: '', price: '', status: 'for-sale', category: '',
       location: '', latitude: '', longitude: '',
@@ -349,9 +350,10 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
           </TextField>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <FieldLabel>Slug</FieldLabel>
+          <FieldLabel>Slug *</FieldLabel>
           <TextField fullWidth size="small" placeholder="e.g. n363db"
-            {...register('slug')}
+            {...register('slug', { required: true })}
+            error={!!errors.slug} helperText={errors.slug ? 'Required' : ''}
             InputProps={{
               endAdornment: (
                 <Box
@@ -678,7 +680,13 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
           </Box>
 
           {step < STEPS.length - 1 ? (
-            <Button variant="contained" size="small" onClick={() => setStep(s => s + 1)} sx={{ minWidth: 100 }}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => setStep(s => s + 1)}
+              disabled={step === 0 && !isValid}
+              sx={{ minWidth: 100 }}
+            >
               Next →
             </Button>
           ) : (

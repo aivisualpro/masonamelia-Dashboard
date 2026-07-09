@@ -625,9 +625,8 @@ export default function AircraftTable({ initialData }: { initialData?: AircraftD
     try {
       if (confirm.mode === 'single') {
         await fetch(`${API_BASE}/${confirm.ids[0]}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isDeleted: true })
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
         });
       } else {
         // Bulk delete via bulkDelete route or multiple PATCH calls in parallel
