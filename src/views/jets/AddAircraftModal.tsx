@@ -281,17 +281,18 @@ export default function AddAircraftModal({ open, onClose, onCreated }: Props) {
       const payload: any = {
         title: values.title,
         slug: values.slug || '',
-        year: values.year || '',
-        price: values.price || '',
         status: values.status,
         location: values.location,
-        latitude: values.latitude || '',
-        longitude: values.longitude || '',
         contactAgent: { name: values.agentName, email: values.agentEmail, phone: values.agentPhone },
         description,
         overview: values.overview,
-        index: values.index || '',
       };
+      // Only include numeric fields when they have a real value (Mongoose rejects empty strings for Number fields)
+      if (values.year && !isNaN(Number(values.year))) payload.year = Number(values.year);
+      if (values.price && !isNaN(Number(values.price))) payload.price = Number(values.price);
+      if (values.index && !isNaN(Number(values.index))) payload.index = Number(values.index);
+      if (values.latitude && values.latitude.trim()) payload.latitude = values.latitude;
+      if (values.longitude && values.longitude.trim()) payload.longitude = values.longitude;
       if (values.category) payload.category = values.category;
       if (values.airframe) payload.airframe = Number(values.airframe);
       if (values.engine) payload.engine = Number(values.engine);
